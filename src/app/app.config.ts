@@ -1,25 +1,19 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
-import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { routes } from './app.routes';
+import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
+import { getAuth, provideAuth } from '@angular/fire/auth';
+import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideFirebaseApp(() =>
-      initializeApp({
-apiKey: "AIzaSyD8C-_dQV26aCyoAaBrhyTfILhB3xup_KA",
-        authDomain: "colishare.firebaseapp.com",
-        databaseURL: "https://colishare-default-rtdb.firebaseio.com",
-        projectId: "colishare",
-        storageBucket: "colishare.firebasestorage.app",
-        messagingSenderId: "842349898218",
-        appId: "1:842349898218:web:86d4807652626e8c6b2a93",
-        measurementId: "G-XR2SNZLHSS"
-      })
-    ),
-    provideFirestore(() => getFirestore()),
-  ],
+    // Initialisation de Firebase
+    provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
+    // Auth Provider (Corrige l'erreur NG0201)
+    provideAuth(() => getAuth()),
+    // Firestore Provider
+    provideFirestore(() => getFirestore())
+  ]
 };

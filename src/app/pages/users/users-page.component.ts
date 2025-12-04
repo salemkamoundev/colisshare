@@ -22,6 +22,7 @@ export class UsersPageComponent {
 
   loadingRequest = false;
   message = '';
+  messageType: 'success' | 'error' = 'success';
 
   constructor() {
     this.users$ = this.collab.getAllUsers();
@@ -30,15 +31,19 @@ export class UsersPageComponent {
   async sendRequest(target: AppUser, currentUser: User | null): Promise<void> {
     if (!currentUser) {
       this.message = 'Vous devez être connecté.';
+      this.messageType = 'error';
       return;
     }
     this.loadingRequest = true;
     this.message = '';
+    
     try {
       await this.collab.sendRequest(currentUser.uid, target.uid);
-      this.message = `Demande envoyée à ${target.displayName}`;
+      this.message = `✅ Demande envoyée à ${target.displayName} !`;
+      this.messageType = 'success';
     } catch (e: any) {
-      this.message = e.message || 'Erreur lors de la demande.';
+      this.message = `❌ ${e.message}`;
+      this.messageType = 'error';
     } finally {
       this.loadingRequest = false;
     }

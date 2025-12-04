@@ -1,61 +1,117 @@
-<div class="p-4 space-y-4">
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-lg font-semibold text-gray-800">Demandes de collaboration</h1>
-      <p class="text-xs text-gray-500">
-        Gérez les demandes de collaboration entrantes sur vos trajets.
-      </p>
-    </div>
+<app-header></app-header>
 
-    <div class="flex gap-2 text-xs">
-      <select class="rounded-lg border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="">Tous les statuts</option>
-        <option value="pending">En attente</option>
-        <option value="accepted">Acceptées</option>
-        <option value="rejected">Rejetées</option>
-      </select>
-    </div>
-  </div>
+<div class="min-h-screen bg-gray-50 p-6">
+  <div class="max-w-6xl mx-auto">
+    
+    <!-- Titre & Tabs -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">Gestion des Collaborations</h1>
+      
+      <div class="flex space-x-4 border-b border-gray-200">
+        <button (click)="setActiveTab('search')" 
+                [class]="activeTab === 'search' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="pb-3 px-1 border-b-2 font-medium text-sm transition-colors">
+          🔍 Rechercher
+        </button>
+        
+        <button (click)="setActiveTab('pending')" 
+                class="relative pb-3 px-1 border-b-2 font-medium text-sm transition-colors"
+                [class]="activeTab === 'pending' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'">
+          🔔 Demandes reçues
+          <ng-container *ngIf="pendingRequests$ | async as pending">
+            <span *ngIf="pending.length > 0" class="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {{ pending.length }}
+            </span>
+          </ng-container>
+        </button>
 
-  <div class="space-y-2">
-    <div
-      *ngFor="let r of requests"
-      class="bg-white rounded-xl shadow border border-gray-100 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs">
-      <div class="space-y-1">
-        <p class="font-medium text-gray-800">
-          {{ r.requesterCompany }}
-          <span class="text-gray-400 text-[11px] ml-1">#{{ r.id }}</span>
-        </p>
-        <p class="text-gray-500">
-          Trajet cible :
-          <span class="font-mono text-gray-700">{{ r.targetTripId }}</span>
-        </p>
-        <p class="text-gray-500">
-          Montant proposé :
-          <span class="font-semibold text-gray-800">{{ r.amount }} TND</span>
-        </p>
+        <button (click)="setActiveTab('accepted')" 
+                [class]="activeTab === 'accepted' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="pb-3 px-1 border-b-2 font-medium text-sm transition-colors">
+          ✅ Mes Collaborateurs
+        </button>
       </div>
+    </div>
 
-      <div class="flex items-center gap-2 md:text-right">
-        <span
-          class="inline-flex items-center rounded-full px-2 py-1 text-[11px]"
-          [ngClass]="{
-            'bg-yellow-100 text-yellow-700': r.status === 'pending',
-            'bg-green-100 text-green-700': r.status === 'accepted',
-            'bg-red-100 text-red-700': r.status === 'rejected'
-          }">
-          {{ r.status }}
-        </span>
+    <!-- Contenu Onglet : RECHERCHE -->
+    <div *ngIf="activeTab === 'search'" class="animate-fade-in">
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <ng-container *ngIf="allUsers$ | async as users">
+          <div *ngFor="let user of users" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg">
+                {{ user.displayName?.charAt(0) || 'U' }}
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-900">{{ user.displayName || 'Utilisateur' }}</h3>
+                <p class="text-xs text-gray-500">{{ user.email }}</p>
+              </div>
+            </div>
+            
+            <ng-container *ngIf="currentUser$ | async as currentUser">
+              <button *ngIf="user.uid !== currentUser.uid"
+                      (click)="sendRequest(user.uid, currentUser.uid)"
+                      class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                Envoyer une demande
+              </button>
+            </ng-container>
+          </div>
+        </ng-container>
+      </div>
+    </div>
 
-        <div class="flex gap-2 text-[11px]">
-          <button class="px-2 py-1 rounded-lg border border-green-200 text-green-700 hover:bg-green-50">
-            Accepter
-          </button>
-          <button class="px-2 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">
-            Refuser
-          </button>
+    <!-- Contenu Onglet : DEMANDES REÇUES (Pending) -->
+    <div *ngIf="activeTab === 'pending'" class="animate-fade-in">
+      <ng-container *ngIf="pendingRequests$ | async as requests">
+        <div *ngIf="requests.length === 0" class="text-center py-12 bg-white rounded-xl border border-dashed">
+          <p class="text-gray-500">Aucune demande en attente.</p>
         </div>
-      </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div *ngFor="let req of requests" class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-yellow-400 flex justify-between items-center">
+            <div>
+              <p class="text-sm text-gray-500">Demande de l'utilisateur ID:</p>
+              <p class="font-mono font-bold text-gray-800">{{ req.fromUserId | slice:0:8 }}...</p>
+              <p class="text-xs text-gray-400 mt-1">Reçu le {{ req.createdAt?.seconds * 1000 | date:'dd/MM/yyyy' }}</p>
+            </div>
+            <div class="flex gap-2">
+              <button (click)="accept(req)" class="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-semibold hover:bg-green-200">
+                Accepter
+              </button>
+              <button (click)="decline(req)" class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-semibold hover:bg-red-200">
+                Refuser
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
     </div>
+
+    <!-- Contenu Onglet : COLLABORATIONS ACCEPTÉES -->
+    <div *ngIf="activeTab === 'accepted'" class="animate-fade-in">
+      <ng-container *ngIf="acceptedCollaborations$ | async as collabs">
+        <div *ngIf="collabs.length === 0" class="text-center py-12 bg-white rounded-xl border border-dashed">
+          <p class="text-gray-500">Vous n'avez pas encore de collaborateurs.</p>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div *ngFor="let collab of collabs" class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex justify-between items-center group">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span class="font-bold text-gray-800">Collaboration Active</span>
+              </div>
+              <p class="text-xs text-gray-500">ID Lien : {{ collab.id }}</p>
+            </div>
+            
+            <button (click)="deleteCollab(collab)" 
+                    class="opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600 rounded-lg text-sm">
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
   </div>
 </div>

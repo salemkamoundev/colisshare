@@ -9,12 +9,14 @@ import {
   signInWithPopup,
   signOut,
   User,
+  updateProfile
 } from '@angular/fire/auth';
 import {
   Firestore,
   doc,
   setDoc,
   serverTimestamp,
+  getDoc
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { AppUser } from '../interfaces/user.interface';
@@ -28,11 +30,17 @@ export class AuthService {
 
   user$: Observable<User | null> = authState(this.auth);
 
-  constructor() {}
-
   async signUp(email: string, password: string, displayName: string): Promise<void> {
+    // 1. Créer le compte Auth
     const cred = await createUserWithEmailAndPassword(this.auth, email, password);
-    await this.saveUserProfile(cred.user, displayName);
+    
+    // 2. Mettre à jour le profil Auth (displayName)
+    if (cred.user) {
+        await updateProfile(cred.user, { displayName });
+        // 3. Créer le document User dans Firestore
+        await this.saveUserProfile(cred.user, displayName);
+    }
+    
     this.ngZone.run(() => this.router.navigate(['/']));
   }
 
@@ -45,6 +53,7 @@ export class AuthService {
     const provider = new GoogleAuthProvider();
     const cred = await signInWithPopup(this.auth, provider);
     const user = cred.user;
+    // Sauvegarder/Mettre à jour le profil Firestore
     await this.saveUserProfile(user, user.displayName || user.email || 'Utilisateur');
     this.ngZone.run(() => this.router.navigate(['/']));
   }
@@ -55,14 +64,20 @@ export class AuthService {
   }
 
   private async saveUserProfile(user: User, displayName: string): Promise<void> {
-    const ref = doc(this.firestore, 'users', user.uid);
+    const userRef = doc(this.firestore, 'users', user.uid);
+    // On vérifie si le user existe déjà pour ne pas écraser createdAt
+    const userSnap = await getDoc(userRef);
+    
     const data: AppUser = {
       uid: user.uid,
       email: user.email || '',
-      displayName,
+      displayName: displayName,
       photoURL: user.photoURL || undefined,
-      createdAt: serverTimestamp(),
+      // Si existe déjà, on garde l'ancien, sinon on met maintenant
+      createdAt: userSnap.exists() ? userSnap.data()['createdAt'] : serverTimestamp(),
     };
-    await setDoc(ref, data, { merge: true });
+
+    // setDoc avec merge: true met à jour ou crée
+    await setDoc(userRef, data, { merge: true });
   }
 }

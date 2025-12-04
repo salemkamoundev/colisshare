@@ -1,44 +1,68 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { CollaborationService } from '../../services/collaboration.service';
-import { Collaboration } from '../../interfaces/collaboration.interface';
-import { Observable, switchMap, of } from 'rxjs';
-import { AppUser } from '../../interfaces/user.interface';
-import { collection, doc, getDoc, Firestore } from '@angular/fire/firestore';
+import { CollaborationService, CollaborationRequest } from '../../services/collaboration.service';
+import { HeaderComponent } from '../../components/header/header.component';
+import { switchMap, of } from 'rxjs';
 
 @Component({
   selector: 'app-collab-requests-page',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, HeaderComponent],
   templateUrl: './collab-requests-page.component.html',
 })
-export class CollabRequestsPageComponent {
-  pending$: Observable<Collaboration[]>;
-  message = '';
+export class CollaborationRequestsPageComponent {
+  private auth = inject(AuthService);
+  private collab = inject(CollaborationService);
 
-  constructor(
-    private auth: AuthService,
-    private collab: CollaborationService,
-  ) {
-    this.pending$ = this.auth.user$.pipe(
-      switchMap(user => {
-        if (!user) return of([]);
-        return this.collab.getPendingRequestsForUser(user.uid);
-      })
-    );
+  currentUser$ = this.auth.user$;
+  activeTab: 'search' | 'pending' | 'accepted' = 'search';
+
+  // Variables utilisées dans le HTML
+  allUsers$ = this.collab.getAllUsers();
+  
+  pendingRequests$ = this.currentUser$.pipe(
+    switchMap(user => user ? this.collab.getPendingRequestsForUser(user.uid) : of([]))
+  );
+
+  acceptedCollaborations$ = this.currentUser$.pipe(
+    switchMap(user => user ? this.collab.getAcceptedCollaborations(user.uid) : of([]))
+  );
+
+  // Actions
+  async sendRequest(targetId: string, currentUserId: string) {
+    try {
+      await this.collab.sendRequest(currentUserId, targetId);
+      alert('✅ Demande envoyée !');
+    } catch (err: any) {
+      alert('❌ ' + err.message);
+    }
   }
 
-  async accept(c: Collaboration): Promise<void> {
+  async accept(c: CollaborationRequest) {
     if (!c.id) return;
-    await this.collab.updateRequestStatus(c.id, 'accepted');
-    this.message = 'Collaboration acceptée.';
+    try {
+      await this.collab.updateRequestStatus(c.id, 'accepted');
+    } catch(e) { console.error(e); }
   }
 
-  async reject(c: Collaboration): Promise<void> {
+  // Nommé 'decline' ici, il faut utiliser 'decline' dans le HTML (pas reject)
+  async decline(c: CollaborationRequest) {
     if (!c.id) return;
-    await this.collab.updateRequestStatus(c.id, 'rejected');
-    this.message = 'Demande refusée.';
+    if (confirm('Refuser cette demande ?')) {
+      await this.collab.updateRequestStatus(c.id, 'rejected');
+    }
+  }
+
+  async deleteCollab(c: CollaborationRequest) {
+    if (!c.id) return;
+    if (confirm('Supprimer cette collaboration ?')) {
+      await this.collab.deleteCollaboration(c.id);
+    }
+  }
+
+  setActiveTab(tab: 'search' | 'pending' | 'accepted') {
+    this.activeTab = tab;
   }
 }

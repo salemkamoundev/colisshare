@@ -1,71 +1,83 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-
-interface HomeSlide {
-  title: string;
-  subtitle: string;
-  description: string;
-  tag: string;
-}
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
-  standalone: true,
   selector: 'app-home-page',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './home-page.component.html',
-  imports: [CommonModule, RouterLink, RouterLinkActive],
 })
 export class HomePageComponent {
-  slides: HomeSlide[] = [
-    {
-      title: 'Bienvenue sur Transport Collab',
-      subtitle: 'Optimisez vos trajets, partagez vos capacités.',
-      description:
-        'Cette application vous aide à gérer vos véhicules, planifier vos trajets et collaborer avec d\'autres transporteurs pour rentabiliser chaque kilomètre.',
-      tag: 'Présentation',
-    },
-    {
-      title: 'Gestion des voitures',
-      subtitle: 'Centralisez votre flotte.',
-      description:
-        'Ajoutez, modifiez et désactivez vos véhicules. Visualisez rapidement leur capacité et leur disponibilité pour les prochains trajets.',
-      tag: 'Flotte',
-    },
-    {
-      title: 'Saisie & Historique des trajets',
-      subtitle: 'Suivez vos opérations.',
-      description:
-        'Déclarez facilement un nouveau trajet et gardez un historique clair des trajets passés, en cours ou planifiés.',
-      tag: 'Trajets',
-    },
-    {
-      title: 'Demandes de collaboration',
-      subtitle: 'Partagez vos capacités avec d\'autres.',
-      description:
-        'Recevez et gérez les demandes de collab sur vos trajets : acceptez, refusez et négociez pour optimiser vos tournées.',
-      tag: 'Collaboration',
-    },
-    {
-      title: 'Chat temps réel',
-      subtitle: 'Communiquez sans friction.',
-      description:
-        'Discutez avec vos partenaires directement depuis l\'application pour régler les détails d\'un trajet ou d\'un colis en quelques messages.',
-      tag: 'Communication',
-    },
-  ];
+  private fb = inject(FormBuilder);
+  private auth = inject(AuthService);
+  private router = inject(Router);
 
-  activeIndex = 0;
+  isLoginMode = true;
+  loading = false;
+  errorMessage = '';
 
-  nextSlide(): void {
-    this.activeIndex = (this.activeIndex + 1) % this.slides.length;
+  authForm: FormGroup = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
+    displayName: [''] 
+  });
+
+  get isSignup() { return !this.isLoginMode; }
+
+  toggleMode() {
+    this.isLoginMode = !this.isLoginMode;
+    this.errorMessage = '';
+    this.authForm.reset();
+    if (this.isSignup) {
+      this.authForm.get('displayName')?.setValidators([Validators.required]);
+    } else {
+      this.authForm.get('displayName')?.clearValidators();
+    }
+    this.authForm.get('displayName')?.updateValueAndValidity();
   }
 
-  prevSlide(): void {
-    this.activeIndex =
-      (this.activeIndex - 1 + this.slides.length) % this.slides.length;
+  async onSubmit() {
+    if (this.authForm.invalid) return;
+    this.loading = true;
+    this.errorMessage = '';
+    const { email, password, displayName } = this.authForm.value;
+
+    try {
+      if (this.isLoginMode) {
+        await this.auth.login(email, password);
+      } else {
+        await this.auth.signUp(email, password, displayName);
+      }
+      this.router.navigate(['/collaborations/demandes']);
+    } catch (error: any) {
+      this.errorMessage = this.translateError(error.code) || error.message;
+    } finally {
+      this.loading = false;
+    }
   }
 
-  goToSlide(index: number): void {
-    this.activeIndex = index;
+  async loginGoogle() {
+    this.loading = true;
+    try {
+      await this.auth.loginWithGoogle();
+      this.router.navigate(['/collaborations/demandes']);
+    } catch (error: any) {
+      this.errorMessage = this.translateError(error.code) || error.message;
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private translateError(code: string): string {
+    switch (code) {
+      case 'auth/email-already-in-use': return 'Email déjà utilisé.';
+      case 'auth/invalid-credential': return 'Identifiants incorrects.';
+      case 'auth/user-not-found': return 'Compte introuvable.';
+      case 'auth/wrong-password': return 'Mot de passe incorrect.';
+      default: return 'Une erreur est survenue.';
+    }
   }
 }
