@@ -1,83 +1,72 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms'; // Import essentiel pour ngModel
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule], // Ajout de FormsModule ici
   templateUrl: './home-page.component.html',
 })
 export class HomePageComponent {
-  private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
 
+  // Propriétés liées au formulaire (ngModel)
+  email = '';
+  password = '';
+  displayName = '';
+  
+  // État de l'interface
   isLoginMode = true;
-  loading = false;
+  isLoading = false;
   errorMessage = '';
-
-  authForm: FormGroup = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-    displayName: [''] 
-  });
-
-  get isSignup() { return !this.isLoginMode; }
 
   toggleMode() {
     this.isLoginMode = !this.isLoginMode;
     this.errorMessage = '';
-    this.authForm.reset();
-    if (this.isSignup) {
-      this.authForm.get('displayName')?.setValidators([Validators.required]);
-    } else {
-      this.authForm.get('displayName')?.clearValidators();
-    }
-    this.authForm.get('displayName')?.updateValueAndValidity();
   }
 
   async onSubmit() {
-    if (this.authForm.invalid) return;
-    this.loading = true;
+    if (this.isLoading) return;
+    this.isLoading = true;
     this.errorMessage = '';
-    const { email, password, displayName } = this.authForm.value;
 
     try {
       if (this.isLoginMode) {
-        await this.auth.login(email, password);
+        await this.auth.login(this.email, this.password).toPromise();
       } else {
-        await this.auth.signUp(email, password, displayName);
+        await this.auth.signUp(this.email, this.password, this.displayName).toPromise();
       }
+      // Redirection après succès
       this.router.navigate(['/collaborations/demandes']);
-    } catch (error: any) {
-      this.errorMessage = this.translateError(error.code) || error.message;
+    } catch (err: any) {
+      console.error(err);
+      this.errorMessage = this.getErrorMessage(err);
     } finally {
-      this.loading = false;
+      this.isLoading = false;
     }
   }
 
   async loginGoogle() {
-    this.loading = true;
     try {
-      await this.auth.loginWithGoogle();
+      await this.auth.loginWithGoogle().toPromise();
       this.router.navigate(['/collaborations/demandes']);
-    } catch (error: any) {
-      this.errorMessage = this.translateError(error.code) || error.message;
-    } finally {
-      this.loading = false;
+    } catch (err: any) {
+      console.error(err);
+      this.errorMessage = "Erreur avec Google : " + err.message;
     }
   }
 
-  private translateError(code: string): string {
-    switch (code) {
-      case 'auth/email-already-in-use': return 'Email déjà utilisé.';
-      case 'auth/invalid-credential': return 'Identifiants incorrects.';
-      case 'auth/user-not-found': return 'Compte introuvable.';
-      case 'auth/wrong-password': return 'Mot de passe incorrect.';
-      default: return 'Une erreur est survenue.';
-    }
+  private getErrorMessage(err: any): string {
+    // Traduction basique des erreurs Firebase
+    const msg = err.message || '';
+    if (msg.includes('auth/invalid-email')) return 'Email invalide.';
+    if (msg.includes('auth/user-not-found')) return 'Utilisateur inconnu.';
+    if (msg.includes('auth/wrong-password')) return 'Mot de passe incorrect.';
+    if (msg.includes('auth/email-already-in-use')) return 'Cet email est déjà utilisé.';
+    return 'Une erreur est survenue. Vérifiez vos identifiants.';
   }
 }

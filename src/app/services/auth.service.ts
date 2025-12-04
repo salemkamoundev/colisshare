@@ -1,83 +1,89 @@
-import { Injectable, inject, NgZone } from '@angular/core';
-import { Router } from '@angular/router';
-import {
-  Auth,
-  authState,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut,
+import { Injectable, inject } from '@angular/core';
+import { 
+  Auth, 
+  authState, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  updateProfile, 
   User,
-  updateProfile
+  setPersistence,
+  browserLocalPersistence,
+  GoogleAuthProvider,
+  signInWithPopup
 } from '@angular/fire/auth';
-import {
-  Firestore,
-  doc,
-  setDoc,
-  serverTimestamp,
-  getDoc
-} from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
+import { Firestore, doc, setDoc } from '@angular/fire/firestore';
+import { Observable, from } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { AppUser } from '../interfaces/user.interface';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class AuthService {
-  private auth = inject(Auth);
-  private firestore = inject(Firestore);
-  private router = inject(Router);
-  private ngZone = inject(NgZone);
+  private auth: Auth = inject(Auth);
+  private firestore: Firestore = inject(Firestore);
 
   user$: Observable<User | null> = authState(this.auth);
 
-  async signUp(email: string, password: string, displayName: string): Promise<void> {
-    // 1. Créer le compte Auth
-    const cred = await createUserWithEmailAndPassword(this.auth, email, password);
-    
-    // 2. Mettre à jour le profil Auth (displayName)
-    if (cred.user) {
-        await updateProfile(cred.user, { displayName });
-        // 3. Créer le document User dans Firestore
-        await this.saveUserProfile(cred.user, displayName);
-    }
-    
-    this.ngZone.run(() => this.router.navigate(['/']));
+  constructor() {
+    setPersistence(this.auth, browserLocalPersistence)
+      .then(() => console.log('🔐 Persistance active'))
+      .catch((e) => console.error('Erreur persistance:', e));
   }
 
-  async login(email: string, password: string): Promise<void> {
-    await signInWithEmailAndPassword(this.auth, email, password);
-    this.ngZone.run(() => this.router.navigate(['/']));
+  // Connexion Email/Pass
+  login(email: string, pass: string) {
+    return from(signInWithEmailAndPassword(this.auth, email, pass));
   }
 
-  async loginWithGoogle(): Promise<void> {
+  // Connexion Google (Ajouté)
+  loginWithGoogle() {
     const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(this.auth, provider);
-    const user = cred.user;
-    // Sauvegarder/Mettre à jour le profil Firestore
-    await this.saveUserProfile(user, user.displayName || user.email || 'Utilisateur');
-    this.ngZone.run(() => this.router.navigate(['/']));
+    return from(signInWithPopup(this.auth, provider)).pipe(
+      switchMap(async (credential) => {
+        // On crée aussi le document user si c'est la première connexion
+        const user = credential.user;
+        const userDoc = doc(this.firestore, `users/${user.uid}`);
+        const userData: AppUser = {
+          uid: user.uid,
+          email: user.email || '',
+          displayName: user.displayName || 'Utilisateur Google',
+          photoURL: user.photoURL || '',
+          role: 'transporteur'
+        };
+        // setDoc avec merge:true pour ne pas écraser un user existant
+        await setDoc(userDoc, userData, { merge: true });
+        return user;
+      })
+    );
   }
 
-  async logout(): Promise<void> {
-    await signOut(this.auth);
-    this.ngZone.run(() => this.router.navigate(['/login']));
+  // Inscription (Renommé en signUp pour compatibilité)
+  signUp(email: string, pass: string, name: string) {
+    return from(createUserWithEmailAndPassword(this.auth, email, pass)).pipe(
+      switchMap(async (credential) => {
+        const user = credential.user;
+        
+        await updateProfile(user, { displayName: name });
+        
+        const userDoc = doc(this.firestore, `users/${user.uid}`);
+        const userData: AppUser = {
+          uid: user.uid,
+          email: user.email || '',
+          displayName: name,
+          photoURL: user.photoURL || '',
+          role: 'transporteur'
+        };
+        
+        await setDoc(userDoc, userData);
+        return user;
+      })
+    );
   }
 
-  private async saveUserProfile(user: User, displayName: string): Promise<void> {
-    const userRef = doc(this.firestore, 'users', user.uid);
-    // On vérifie si le user existe déjà pour ne pas écraser createdAt
-    const userSnap = await getDoc(userRef);
-    
-    const data: AppUser = {
-      uid: user.uid,
-      email: user.email || '',
-      displayName: displayName,
-      photoURL: user.photoURL || undefined,
-      // Si existe déjà, on garde l'ancien, sinon on met maintenant
-      createdAt: userSnap.exists() ? userSnap.data()['createdAt'] : serverTimestamp(),
-    };
-
-    // setDoc avec merge: true met à jour ou crée
-    await setDoc(userRef, data, { merge: true });
+  // Déconnexion
+  logout() {
+    return from(signOut(this.auth));
   }
 }

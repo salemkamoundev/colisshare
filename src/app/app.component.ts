@@ -1,19 +1,18 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
+import { HeaderComponent } from './components/header/header.component';
 
 @Component({
-  standalone: true,
   selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css'],
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  standalone: true,
+  imports: [CommonModule, RouterOutlet, HeaderComponent],
+  template: `
+    <!-- Le Header gère sa propre visibilité (il se cache si user$ est null) -->
+    <app-header></app-header>
+    
+    <!-- Le contenu des pages s'affiche ici -->
+    <router-outlet></router-outlet>
+  `
 })
-export class AppComponent {
-  menuOpen = false;
-
-  toggleMenu(): void {
-    this.menuOpen = !this.menuOpen;
-    console.log('Menu toggled:', this.menuOpen);
-  }
-}
+export class AppComponent {}

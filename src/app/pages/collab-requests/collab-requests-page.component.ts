@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { CollaborationService, CollaborationRequest } from '../../services/collaboration.service';
-import { HeaderComponent } from '../../components/header/header.component';
+import {  } from '../../components/header/header.component';
 import { Observable, switchMap, of, combineLatest, map } from 'rxjs';
 
 @Component({
   selector: 'app-collab-requests-page',
   standalone: true,
-  imports: [CommonModule, RouterModule, HeaderComponent],
+  imports: [CommonModule, RouterModule, ],
   templateUrl: './collab-requests-page.component.html',
 })
 export class CollaborationRequestsPageComponent {

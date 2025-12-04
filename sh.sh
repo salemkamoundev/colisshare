@@ -1,123 +1,317 @@
 #!/bin/bash
 
-echo "🚑 Réparation du Service Collaboration (Restauration des méthodes manquantes)..."
+echo "🚀 Mise à jour complète de TripsHistoryPageComponent (Support HTML total)..."
 
-cat > src/app/services/collaboration.service.ts << 'EOF'
-import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, collectionData } from '@angular/fire/firestore';
-import { Observable, combineLatest, map, of, tap } from 'rxjs';
-import { AppUser } from '../interfaces/user.interface';
+cat > src/app/pages/trips-history/trips-history-page.component.ts << 'EOF'
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
+import { FirestoreService, Trip } from '../../services/firestore.service';
+import { Car } from '../../interfaces/car.interface';
+import { Observable, of } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs/operators';
+import { Timestamp } from '@angular/fire/firestore';
 
-export interface CollaborationRequest {
-  id?: string;
-  fromUserId: string;
-  toUserId: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  createdAt: any;
-  fromUser?: AppUser;
-  toUser?: AppUser;
+// Interface étendue pour le template
+interface TripWithCar extends Trip {
+  car?: Car;
 }
 
-@Injectable({
-  providedIn: 'root'
+@Component({
+  selector: 'app-trips-history-page',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePipe], 
+  templateUrl: './trips-history-page.component.html'
 })
-export class CollaborationService {
-  private firestore = inject(Firestore);
+export class TripsHistoryPageComponent implements OnInit {
+  private auth = inject(AuthService);
+  private firestoreService = inject(FirestoreService);
+  private fb = inject(FormBuilder);
 
-  // --- ENVOI ---
-  async sendRequest(currentUserId: string, targetUserId: string) {
-    console.log(`Envoi demande de ${currentUserId} vers ${targetUserId}`);
-    const requestsRef = collection(this.firestore, 'collaboration_requests');
-    
-    const q = query(requestsRef, 
-      where('fromUserId', '==', currentUserId), 
-      where('toUserId', '==', targetUserId)
-    );
-    const snapshot = await getDocs(q);
-    
-    if (!snapshot.empty) {
-      console.warn('Demande déjà existante');
-      throw new Error('Une demande existe déjà.');
-    }
+  trips$!: Observable<TripWithCar[]>;
+  availableCars$!: Observable<Car[]>;
+  
+  // Données locales
+  allTrips: TripWithCar[] = [];
+  filteredTrips: TripWithCar[] = [];
+  
+  // Filtres & Tri
+  searchTerm = ''; // Alias pour searchText du template
+  searchText = ''; 
+  filterStatus = 'all';
+  sortField = 'date';
+  sortDirection: 'asc' | 'desc' = 'desc';
+  
+  // Sélection multiple
+  selectedTrips = new Set<string>();
+  selectAll = false;
 
-    return addDoc(requestsRef, {
-      fromUserId: currentUserId,
-      toUserId: targetUserId,
-      status: 'pending',
-      createdAt: new Date()
+  // UI State
+  loading = false;
+  showCreateModal = false;
+  createForm: FormGroup;
+  
+  // Edition (Modal détails/edit)
+  editingTrip: TripWithCar | null = null;
+  isModalOpen = false; // Utilisé pour l'édition rapide
+  
+  COMPANY_ID = '';
+
+  // Mapping des labels de statut
+  statusLabels: any = {
+    pending: 'En attente',
+    in_progress: 'En cours',
+    completed: 'Terminé',
+    cancelled: 'Annulé'
+  };
+  
+  // Mapping des couleurs
+  statusColors: any = {
+    pending: 'bg-yellow-100 text-yellow-800',
+    in_progress: 'bg-blue-100 text-blue-800',
+    completed: 'bg-green-100 text-green-800',
+    cancelled: 'bg-red-100 text-red-800'
+  };
+
+  constructor() {
+    this.createForm = this.fb.group({
+      departure: ['', Validators.required],
+      arrival: ['', Validators.required],
+      date: [new Date().toISOString().split('T')[0], Validators.required],
+      carId: ['', Validators.required],
+      status: ['pending']
     });
   }
 
-  // --- LECTURE (Pending) ---
+  ngOnInit() {
+    this.auth.user$.subscribe(user => {
+      if (user) {
+        this.COMPANY_ID = user.uid;
+        this.loadData();
+      }
+    });
+  }
+
+  loadData() {
+    this.loading = true;
+    this.availableCars$ = this.firestoreService.getCars(this.COMPANY_ID);
+
+    this.firestoreService.getTrips(this.COMPANY_ID).pipe(
+      switchMap(trips => {
+        if (!trips.length) return of([]);
+        return this.availableCars$.pipe(
+          map(cars => {
+            return trips.map(trip => {
+              const car = cars.find(c => c.id === trip.carId);
+              return { ...trip, car } as TripWithCar;
+            });
+          })
+        );
+      })
+    ).subscribe({
+      next: (trips) => {
+        this.allTrips = trips;
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.loading = false;
+      }
+    });
+  }
+
+  // --- FILTRES & TRI ---
+
+  onSearchChange() {
+    this.searchTerm = this.searchText; // Synchro
+    this.applyFilters();
+  }
+
+  onFilterStatusChange() {
+    this.applyFilters();
+  }
   
-  // Méthode principale avec logs
-  getPendingRequestsForUser(userId: string): Observable<CollaborationRequest[]> {
-    console.log(`🔍 Récupération demandes en attente pour: ${userId}`);
-    const requestsRef = collection(this.firestore, 'collaboration_requests');
-    const q = query(requestsRef, where('toUserId', '==', userId), where('status', '==', 'pending'));
+  clearFilters() {
+    this.searchText = '';
+    this.searchTerm = '';
+    this.filterStatus = 'all';
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    let res = [...this.allTrips];
+
+    // Filtre Texte
+    if (this.searchText) {
+      const term = this.searchText.toLowerCase();
+      res = res.filter(t => 
+        (t.departure || '').toLowerCase().includes(term) ||
+        (t.arrival || '').toLowerCase().includes(term) ||
+        (t.car?.brand || '').toLowerCase().includes(term)
+      );
+    }
+
+    // Filtre Statut
+    if (this.filterStatus !== 'all') {
+      res = res.filter(t => t.status === this.filterStatus);
+    }
+
+    // Tri
+    res.sort((a: any, b: any) => {
+      let valA = a[this.sortField];
+      let valB = b[this.sortField];
+      
+      // Gestion cas date/timestamp
+      if (this.sortField === 'estimatedDepartureTime' || this.sortField === 'date') {
+         valA = new Date(a.date || 0).getTime();
+         valB = new Date(b.date || 0).getTime();
+      }
+
+      if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    this.filteredTrips = res;
+  }
+
+  onSortChange(field: string) {
+    if (this.sortField === field) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+    this.applyFilters();
+  }
+
+  // --- SELECTION MULTIPLE ---
+
+  toggleSelectAll() {
+    this.selectAll = !this.selectAll;
+    this.selectedTrips.clear();
+    if (this.selectAll) {
+      this.filteredTrips.forEach(t => {
+        if (t.id) this.selectedTrips.add(t.id);
+      });
+    }
+  }
+
+  toggleSelect(id: string) {
+    if (this.selectedTrips.has(id)) {
+      this.selectedTrips.delete(id);
+    } else {
+      this.selectedTrips.add(id);
+    }
+    this.selectAll = this.selectedTrips.size === this.filteredTrips.length;
+  }
+
+  async deleteSelected() {
+    if (!confirm(`Supprimer ${this.selectedTrips.size} trajets ?`)) return;
     
-    return (collectionData(q, { idField: 'id' }) as Observable<CollaborationRequest[]>).pipe(
-      tap(results => console.log(`   👉 Résultats trouvés: ${results.length}`, results))
+    const promises = Array.from(this.selectedTrips).map(id => 
+      this.firestoreService.deleteTrip(id)
     );
-  }
-
-  // ALIAS pour compatibilité (fixe l'erreur TS2339)
-  getPendingRequests(userId: string): Observable<CollaborationRequest[]> {
-    return this.getPendingRequestsForUser(userId);
-  }
-
-  // --- LECTURE (Accepted) ---
-  getAcceptedCollaborations(userId: string): Observable<CollaborationRequest[]> {
-    const requestsRef = collection(this.firestore, 'collaboration_requests');
     
-    const q1 = query(requestsRef, where('toUserId', '==', userId), where('status', '==', 'accepted'));
-    const q2 = query(requestsRef, where('fromUserId', '==', userId), where('status', '==', 'accepted'));
+    await Promise.all(promises);
+    this.selectedTrips.clear();
+    this.selectAll = false;
+    this.loadData();
+  }
+
+  // --- ACTIONS CRUD ---
+
+  openCreateModal() {
+    this.createForm.reset({
+      status: 'pending',
+      date: new Date().toISOString().split('T')[0]
+    });
+    this.showCreateModal = true;
+  }
+
+  closeCreateModal() {
+    this.showCreateModal = false;
+  }
+
+  async createTrip() {
+    if (this.createForm.invalid) return;
+    this.loading = true;
     
-    const received$ = collectionData(q1, { idField: 'id' }) as Observable<CollaborationRequest[]>;
-    const sent$ = collectionData(q2, { idField: 'id' }) as Observable<CollaborationRequest[]>;
-
-    return combineLatest([received$, sent$]).pipe(
-      map(([r, s]) => [...r, ...s])
-    );
+    try {
+      const formData = this.createForm.value;
+      // Construction objet Trip compatible
+      const newTrip: any = {
+        companyId: this.COMPANY_ID,
+        departure: formData.departure,
+        arrival: formData.arrival,
+        date: formData.date,
+        carId: formData.carId,
+        status: formData.status,
+        createdAt: new Date()
+      };
+      
+      await this.firestoreService.addTrip(newTrip);
+      this.closeCreateModal();
+      this.loadData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      this.loading = false;
+    }
   }
 
-  // --- ACTIONS (Accept/Decline) ---
-
-  async updateRequestStatus(requestId: string, status: 'accepted' | 'rejected') {
-    console.log(`📝 Mise à jour demande ${requestId} -> ${status}`);
-    const docRef = doc(this.firestore, 'collaboration_requests', requestId);
-    return updateDoc(docRef, { status });
+  deleteTrip(trip: TripWithCar) {
+    if (!trip.id) return;
+    if (confirm('Supprimer ce trajet ?')) {
+      this.firestoreService.deleteTrip(trip.id).then(() => this.loadData());
+    }
   }
 
-  // ALIAS pour compatibilité (fixe l'erreur TS2339)
-  async acceptRequest(requestId: string) {
-    return this.updateRequestStatus(requestId, 'accepted');
+  async duplicateTrip(trip: TripWithCar) {
+    const { id, ...data } = trip;
+    const copy = { ...data, status: 'pending', createdAt: new Date() };
+    await this.firestoreService.addTrip(copy);
+    this.loadData();
+  }
+  
+  openEditModal(trip: TripWithCar) {
+    this.editingTrip = { ...trip };
+    this.isModalOpen = true;
+  }
+  
+  // Alias pour compatibilité template
+  openDetailsModal(trip: TripWithCar) {
+    this.openEditModal(trip);
   }
 
-  // ALIAS pour compatibilité (fixe l'erreur TS2339)
-  async declineRequest(requestId: string) {
-    return this.updateRequestStatus(requestId, 'rejected');
+  // --- HELPERS ---
+
+  countByStatus(status: string): number {
+    return this.allTrips.filter(t => t.status === status).length;
   }
 
-  // --- SUPPRESSION ---
-  async deleteCollaboration(requestId: string) {
-    console.log(`🗑️ Suppression collaboration ${requestId}`);
-    const docRef = doc(this.firestore, 'collaboration_requests', requestId);
-    return deleteDoc(docRef);
+  async quickUpdateStatus(trip: TripWithCar, status: any) {
+    if (!trip.id) return;
+    const newStatus = status.value || status; 
+    await this.firestoreService.updateTrip({ id: trip.id, status: newStatus });
+    trip.status = newStatus; // Optimistic update
+    this.applyFilters(); // Re-tri éventuel
   }
 
-  // --- UTILISATEURS ---
-  getAllUsers(): Observable<AppUser[]> {
-    const usersRef = collection(this.firestore, 'users');
-    return collectionData(usersRef, { idField: 'uid' }) as Observable<AppUser[]>;
+  formatDate(val: any): string {
+    if (!val) return '-';
+    // Gestion Timestamp Firestore ou Date string
+    const date = val.toDate ? val.toDate() : new Date(val);
+    return new DatePipe('en-US').transform(date, 'dd/MM/yyyy HH:mm') || '-';
   }
 
-  // --- SHARED TRIPS (Fixe l'erreur TS2339) ---
-  getSharedTripsForUser(userId: string): Observable<any[]> {
-    // Placeholder pour éviter l'erreur de compilation
-    return of([]); 
+  exportToCSV() {
+    console.log("Export CSV non implémenté pour l'instant");
+    alert("Fonctionnalité à venir !");
   }
 }
 EOF
 
-echo "✅ Service réparé. Toutes les erreurs TS2339 devraient disparaître."
+echo "✅ TripsHistoryPageComponent COMPLET (toutes méthodes présentes) !"

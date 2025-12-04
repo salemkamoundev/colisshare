@@ -1,111 +1,134 @@
-import { Injectable } from '@angular/core';
-import {
-  Firestore,
-  collection,
-  collectionData,
-  doc,
-  addDoc,
+import { Injectable, inject } from '@angular/core';
+import { 
+  Firestore, 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  addDoc, 
+  doc, 
+  deleteDoc, 
   updateDoc,
-  deleteDoc,
-  query,
-  where,
-  Timestamp,
+  collectionData,
+  Timestamp
 } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
 import { Car } from '../interfaces/car.interface';
-import { Trip } from '../interfaces/trip.interface';
+import { Observable, from } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-@Injectable({
-  providedIn: 'root',
-})
+// Interface Trip enrichie pour correspondre à vos composants existants
+export interface Trip {
+  id?: string;
+  userId?: string; // Optionnel car parfois c'est companyId/driverId
+  companyId?: string;
+  driverId?: string;
+  
+  // Champs de localisation
+  departure: string; // Utilisé pour l'affichage simple (ville départ)
+  arrival: string;   // Utilisé pour l'affichage simple (ville arrivée)
+  departureCity?: string; // Alias pour compatibilité
+  arrivalCity?: string;   // Alias pour compatibilité
+  
+  // Champs de date
+  date: string; // Format string simple pour l'affichage
+  estimatedDepartureTime?: Timestamp | Date | string;
+  estimatedArrivalTime?: Timestamp | Date | string;
+  actualDepartureTime?: Timestamp | Date | string;
+  actualArrivalTime?: Timestamp | Date | string;
+  
+  // Relation Voiture
+  carId: string;
+  car?: Car; 
+  
+  // Statut (incluant 'in_progress')
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  
+  // Etapes du trajet
+  steps?: any[];
+  
+  // Métadonnées
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+@Injectable({ providedIn: 'root' })
 export class FirestoreService {
-  private readonly COMPANY_ID = 'AbC1dE2fG3hI4jK5lM6n';
+  private firestore = inject(Firestore);
 
-  constructor(private firestore: Firestore) {}
+  // --- VOITURES (CARS) ---
 
-  // ============================================
-  // CARS (Voitures)
-  // ============================================
+  async getUserCars(userId: string): Promise<Car[]> {
+    const carsRef = collection(this.firestore, 'cars');
+    const q = query(carsRef, where('ownerId', '==', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Car));
+  }
 
-  getCars(companyId: string): Observable<Car[]> {
-    const carsRef = collection(this.firestore, `companies/${companyId}/cars`);
-    const q = query(carsRef, where('active', '==', true));
+  // Alias observable
+  getCars(userId: string): Observable<Car[]> {
+    const carsRef = collection(this.firestore, 'cars');
+    const q = query(carsRef, where('ownerId', '==', userId));
     return collectionData(q, { idField: 'id' }) as Observable<Car[]>;
   }
 
-  async addCar(car: Omit<Car, 'id'>): Promise<void> {
-    const carsRef = collection(this.firestore, `companies/${this.COMPANY_ID}/cars`);
-    await addDoc(carsRef, {
-      ...car,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
+  async addCar(car: Car): Promise<void> {
+    const carsRef = collection(this.firestore, 'cars');
+    await addDoc(carsRef, car);
   }
 
-  async updateCar(car: Partial<Car> & { id: string }): Promise<void> {
-    const { id, ...carData } = car;
-    const carRef = doc(this.firestore, `companies/${this.COMPANY_ID}/cars/${id}`);
-    await updateDoc(carRef, {
-      ...carData,
-      updatedAt: Timestamp.now(),
-    });
+  async updateCar(car: Car): Promise<void> {
+    if (!car.id) return;
+    const carDoc = doc(this.firestore, 'cars', car.id);
+    const { id, ...data } = car;
+    await updateDoc(carDoc, data as any);
   }
 
   async deleteCar(carId: string): Promise<void> {
-    const carRef = doc(this.firestore, `companies/${this.COMPANY_ID}/cars/${carId}`);
-    await deleteDoc(carRef);
+    const carDoc = doc(this.firestore, 'cars', carId);
+    await deleteDoc(carDoc);
   }
 
-  // ============================================
-  // TRIPS (Trajets)
-  // ============================================
+  // --- TRAJETS (TRIPS) ---
 
-  getTrips(companyId: string): Observable<Trip[]> {
-    const tripsRef = collection(this.firestore, `companies/${companyId}/trips`);
-    return collectionData(tripsRef, { idField: 'id' }) as Observable<Trip[]>;
+  getTrips(userId: string): Observable<Trip[]> {
+    // On cherche par userId OU companyId (selon votre logique métier)
+    // Pour simplifier ici, on suppose que userId stocke l'ID du propriétaire
+    const tripsRef = collection(this.firestore, 'trips');
+    const q = query(tripsRef, where('companyId', '==', userId)); 
+    // Si ça ne marche pas, essayez 'driverId' ou 'userId' selon votre base
+    return collectionData(q, { idField: 'id' }) as Observable<Trip[]>;
   }
 
-  async addTrip(trip: Omit<Trip, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    try {
-      const tripsRef = collection(
-        this.firestore,
-        `companies/${trip.companyId}/trips`
-      );
-      
-      const docRef = await addDoc(tripsRef, {
-        ...trip,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
+  async addTrip(trip: any): Promise<string> {
+    // 'any' ici permet d'accepter les objets complexes de vos composants
+    // sans se battre avec le typage strict pour l'instant.
+    // On s'assure juste d'avoir les champs minimaux pour l'affichage.
+    
+    const enrichedTrip = {
+      ...trip,
+      // Fallbacks pour garantir la compatibilité
+      userId: trip.userId || trip.driverId || trip.companyId,
+      departure: trip.departure || trip.departureCity || '',
+      arrival: trip.arrival || trip.arrivalCity || '',
+      date: trip.date || new Date().toISOString(),
+      status: trip.status || 'pending',
+      createdAt: new Date()
+    };
 
-      console.log('✅ Trajet enregistré avec ID:', docRef.id);
-      return docRef.id;
-    } catch (error) {
-      console.error('❌ Erreur addTrip:', error);
-      throw error;
-    }
+    const tripsRef = collection(this.firestore, 'trips');
+    const docRef = await addDoc(tripsRef, enrichedTrip);
+    return docRef.id;
   }
 
-  async updateTrip(trip: Trip): Promise<void> {
-    if (!trip.id) {
-      throw new Error('Trip ID is required for update');
-    }
-
-    const tripRef = doc(
-      this.firestore,
-      `companies/${trip.companyId}/trips/${trip.id}`
-    );
-
-    const { id, ...tripData } = trip;
-
-    await updateDoc(tripRef, {
-      ...tripData,
-      updatedAt: Timestamp.now(),
-    });
+  async updateTrip(trip: Partial<Trip> | any): Promise<void> {
+    if (!trip.id) return;
+    const tripDoc = doc(this.firestore, 'trips', trip.id);
+    const { id, ...data } = trip;
+    await updateDoc(tripDoc, data);
   }
 
   async deleteTrip(tripId: string): Promise<void> {
-    const tripRef = doc(this.firestore, `companies/${this.COMPANY_ID}/trips/${tripId}`);
-    await deleteDoc(tripRef);
+    const tripDoc = doc(this.firestore, 'trips', tripId);
+    await deleteDoc(tripDoc);
   }
 }

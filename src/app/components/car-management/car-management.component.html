@@ -81,7 +81,7 @@
                      [ngClass]="{'border-l-4 border-blue-500': selectedCarId === car.id, 'border-l-4 border-gray-200': selectedCarId !== car.id}">
                     
                     <div>
-                        <p class="text-lg font-bold text-gray-900">{{ car.make }} {{ car.model }}</p>
+                        <p class="text-lg font-bold text-gray-900">{{ car.brand }} {{ car.model }}</p>
                         <p class="text-sm text-gray-600">Plaque: {{ car.licensePlate }}</p>
                         <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
                               [ngClass]="car.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">

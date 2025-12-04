@@ -1,22 +1,26 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './services/auth.service';
-import { map, take } from 'rxjs/operators';
+import { map, skipWhile, take, tap } from 'rxjs/operators';
 
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
+  // user$ émet null au début avant de vérifier le token local.
+  // On ne veut PAS prendre cette première valeur "null" par défaut si Firebase est en train de charger.
+  // Mais authState() gère ça bien généralement.
+  // Si le problème persiste, c'est souvent que le Guard s'exécute TROP vite.
+  
   return auth.user$.pipe(
-    take(1),
-    map(user => {
-      if (user) {
-        return true; // L'utilisateur est connecté, accès autorisé
-      } else {
-        // Non connecté -> Redirection vers la page de Login
+    take(1), 
+    tap(user => {
+      // Log pour debug
+      if (!user) {
+        console.log('🔒 AuthGuard: Pas d\'utilisateur -> Redirection Login');
         router.navigate(['/']);
-        return false;
       }
-    })
+    }),
+    map(user => !!user)
   );
 };

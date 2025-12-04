@@ -203,7 +203,7 @@
               </td>
               <td class="px-6 py-4 text-sm text-gray-700">
                 <div *ngIf="trip.car">
-                  <div class="font-medium">{{ trip.car.make }} {{ trip.car.model }}</div>
+                  <div class="font-medium">{{ trip.car.brand }} {{ trip.car.model }}</div>
                   <div class="text-xs text-gray-500">{{ trip.car.licensePlate }}</div>
                 </div>
                 <span *ngIf="!trip.car" class="text-gray-400">N/A</span>
@@ -302,7 +302,7 @@
             <option value="" disabled>Sélectionner</option>
             <ng-container *ngIf="availableCars$ | async as cars">
               <option *ngFor="let car of cars" [value]="car.id">
-                {{ car.make }} {{ car.model }} ({{ car.licensePlate }})
+                {{ car.brand }} {{ car.model }} ({{ car.licensePlate }})
               </option>
             </ng-container>
           </select>
