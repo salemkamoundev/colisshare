@@ -1,0 +1,29 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold text-gray-800">Trajets des collaborateurs</h1>
+    <a routerLink="/" class="text-sm text-blue-600 underline">Retour</a>
+  </div>
+
+  <ng-container *ngIf="sharedTrips$ | async as trips">
+    <div *ngIf="trips.length === 0" class="text-gray-500">
+      Aucun trajet partagé pour le moment.
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4" *ngIf="trips.length > 0">
+      <div *ngFor="let t of trips" class="bg-white rounded shadow p-4">
+        <p class="font-semibold text-gray-800">
+          {{ t.departureCity }} → {{ t.arrivalCity }}
+        </p>
+        <p class="text-xs text-gray-500">
+          Départ : {{ formatDate(t.estimatedDepartureTime) }}
+        </p>
+        <p class="text-xs text-gray-500">
+          Arrivée : {{ formatDate(t.estimatedArrivalTime) }}
+        </p>
+        <p class="text-xs text-gray-400 mt-1">
+          Driver : {{ t.driverId }}
+        </p>
+      </div>
+    </div>
+  </ng-container>
+</div>

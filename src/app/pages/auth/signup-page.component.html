@@ -1,0 +1,32 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+    <h1 class="text-2xl font-bold text-gray-800 text-center">Créer un compte</h1>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
+        <input type="text" formControlName="displayName" class="w-full border rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input type="email" formControlName="email" class="w-full border rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+        <input type="password" formControlName="password" class="w-full border rounded px-3 py-2">
+      </div>
+
+      <button type="submit" [disabled]="loading" class="w-full bg-green-600 text-white py-2 rounded mt-2">
+        <span *ngIf="!loading">Créer le compte</span>
+        <span *ngIf="loading">Création...</span>
+      </button>
+    </form>
+
+    <p *ngIf="errorMessage" class="text-red-600 text-sm text-center">{{ errorMessage }}</p>
+
+    <p class="text-center text-sm text-gray-600">
+      Déjà un compte ?
+      <a routerLink="/login" class="text-blue-600 underline">Se connecter</a>
+    </p>
+  </div>
+</div>

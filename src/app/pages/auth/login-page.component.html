@@ -1,0 +1,33 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+    <h1 class="text-2xl font-bold text-gray-800 text-center">Connexion</h1>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input type="email" formControlName="email" class="w-full border rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+        <input type="password" formControlName="password" class="w-full border rounded px-3 py-2">
+      </div>
+
+      <button type="submit" [disabled]="loading" class="w-full bg-blue-600 text-white py-2 rounded mt-2">
+        <span *ngIf="!loading">Se connecter</span>
+        <span *ngIf="loading">Connexion...</span>
+      </button>
+    </form>
+
+    <button (click)="loginWithGoogle()" [disabled]="loading" class="w-full border border-gray-300 py-2 rounded flex items-center justify-center gap-2">
+      <span>🔐</span>
+      <span>Continuer avec Google</span>
+    </button>
+
+    <p *ngIf="errorMessage" class="text-red-600 text-sm text-center">{{ errorMessage }}</p>
+
+    <p class="text-center text-sm text-gray-600">
+      Pas de compte ?
+      <a routerLink="/signup" class="text-blue-600 underline">Créer un compte</a>
+    </p>
+  </div>
+</div>

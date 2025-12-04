@@ -1,0 +1,25 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold text-gray-800">Demandes de collaboration</h1>
+    <a routerLink="/" class="text-sm text-blue-600 underline">Retour</a>
+  </div>
+
+  <p *ngIf="message" class="mb-4 text-sm text-green-700">{{ message }}</p>
+
+  <ng-container *ngIf="pending$ | async as pending">
+    <div *ngIf="pending.length === 0" class="text-gray-500">Aucune demande en attente.</div>
+
+    <div *ngFor="let c of pending" class="bg-white rounded shadow mb-2 px-4 py-3 flex justify-between items-center">
+      <div>
+        <p class="font-medium text-gray-800">
+          Demande de : {{ c.requesterId }}
+        </p>
+        <p class="text-xs text-gray-500">Statut : {{ c.status }}</p>
+      </div>
+      <div class="flex gap-2">
+        <button (click)="accept(c)" class="px-3 py-1 text-sm bg-green-600 text-white rounded">Accepter</button>
+        <button (click)="reject(c)" class="px-3 py-1 text-sm bg-red-600 text-white rounded">Refuser</button>
+      </div>
+    </div>
+  </ng-container>
+</div>
