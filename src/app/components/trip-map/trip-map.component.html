@@ -1,0 +1,11 @@
+<div class="w-full h-full bg-white rounded-lg shadow-lg">
+    <div 
+        style="height: 500px;" 
+        leaflet 
+        [leafletOptions]="options" 
+        [leafletLayers]="layers"
+        (leafletMapReady)="onMapReady($event)"
+        class="rounded-lg"
+    >
+    </div>
+</div>

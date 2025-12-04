@@ -1,0 +1,151 @@
+<!-- STRUCTURE GLOBALE -->
+<div class="min-h-screen bg-gray-50">
+  
+  <!-- ================================ -->
+  <!-- HEADER + MENU -->
+  <!-- ================================ -->
+  <header class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3">
+      
+      <!-- Ligne principale du header -->
+      <div class="flex items-center justify-between">
+        
+        <!-- LOGO -->
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            TC
+          </div>
+          <div class="hidden sm:block">
+            <h1 class="text-xl font-bold text-gray-900">Transport Collab</h1>
+            <p class="text-xs text-gray-500">Gestion de flotte</p>
+          </div>
+        </div>
+
+        <!-- MENU DESKTOP (masqué sur mobile) -->
+        <nav class="hidden lg:flex items-center gap-2">
+          <a 
+            routerLink="/" 
+            routerLinkActive="bg-blue-600 text-white shadow-lg" 
+            [routerLinkActiveOptions]="{exact: true}"
+            class="px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-blue-50 transition-all duration-200">
+            🏠 Accueil
+          </a>
+          <a 
+            routerLink="/voitures" 
+            routerLinkActive="bg-blue-600 text-white shadow-lg"
+            class="px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-blue-50 transition-all duration-200">
+            🚗 Voitures
+          </a>
+          <a 
+            routerLink="/trajets/saisie" 
+            routerLinkActive="bg-blue-600 text-white shadow-lg"
+            class="px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-blue-50 transition-all duration-200">
+            ➕ Nouveau Trajet
+          </a>
+          <a 
+            routerLink="/trajets/historique" 
+            routerLinkActive="bg-blue-600 text-white shadow-lg"
+            class="px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-blue-50 transition-all duration-200">
+            📋 Historique
+          </a>
+          <a 
+            routerLink="/collaborations/demandes" 
+            routerLinkActive="bg-blue-600 text-white shadow-lg"
+            class="px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-blue-50 transition-all duration-200">
+            🤝 Collaborations
+          </a>
+          <a 
+            routerLink="/chat" 
+            routerLinkActive="bg-blue-600 text-white shadow-lg"
+            class="px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-blue-50 transition-all duration-200">
+            💬 Chat
+          </a>
+        </nav>
+
+        <!-- BOUTON BURGER MOBILE -->
+        <button 
+          (click)="toggleMenu()" 
+          class="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          type="button">
+          <svg *ngIf="!menuOpen" class="w-7 h-7 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+          <svg *ngIf="menuOpen" class="w-7 h-7 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- MENU MOBILE DROPDOWN -->
+      <nav *ngIf="menuOpen" class="lg:hidden mt-4 pb-4 space-y-2 border-t pt-4">
+        <a 
+          routerLink="/" 
+          (click)="toggleMenu()"
+          routerLinkActive="bg-blue-600 text-white"
+          [routerLinkActiveOptions]="{exact: true}"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+          <span class="text-2xl">🏠</span>
+          <span>Accueil</span>
+        </a>
+        <a 
+          routerLink="/voitures" 
+          (click)="toggleMenu()"
+          routerLinkActive="bg-blue-600 text-white"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+          <span class="text-2xl">🚗</span>
+          <span>Gestion des Voitures</span>
+        </a>
+        <a 
+          routerLink="/trajets/saisie" 
+          (click)="toggleMenu()"
+          routerLinkActive="bg-blue-600 text-white"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+          <span class="text-2xl">➕</span>
+          <span>Nouveau Trajet</span>
+        </a>
+        <a 
+          routerLink="/trajets/historique" 
+          (click)="toggleMenu()"
+          routerLinkActive="bg-blue-600 text-white"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+          <span class="text-2xl">📋</span>
+          <span>Historique des Trajets</span>
+        </a>
+        <a 
+          routerLink="/collaborations/demandes" 
+          (click)="toggleMenu()"
+          routerLinkActive="bg-blue-600 text-white"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+          <span class="text-2xl">🤝</span>
+          <span>Demandes de Collab</span>
+        </a>
+        <a 
+          routerLink="/chat" 
+          (click)="toggleMenu()"
+          routerLinkActive="bg-blue-600 text-white"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+          <span class="text-2xl">💬</span>
+          <span>Chat</span>
+        </a>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- ================================ -->
+  <!-- CONTENU PRINCIPAL -->
+  <!-- ================================ -->
+  <main class="container mx-auto px-4 py-6">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- ================================ -->
+  <!-- FOOTER -->
+  <!-- ================================ -->
+  <footer class="bg-white border-t border-gray-200 mt-12 py-6">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-sm text-gray-600">© 2025 Transport Collab - Tous droits réservés</p>
+    </div>
+  </footer>
+
+</div>

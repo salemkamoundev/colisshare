@@ -1,0 +1,61 @@
+<div class="p-4 space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-lg font-semibold text-gray-800">Demandes de collaboration</h1>
+      <p class="text-xs text-gray-500">
+        Gérez les demandes de collaboration entrantes sur vos trajets.
+      </p>
+    </div>
+
+    <div class="flex gap-2 text-xs">
+      <select class="rounded-lg border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">Tous les statuts</option>
+        <option value="pending">En attente</option>
+        <option value="accepted">Acceptées</option>
+        <option value="rejected">Rejetées</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="space-y-2">
+    <div
+      *ngFor="let r of requests"
+      class="bg-white rounded-xl shadow border border-gray-100 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs">
+      <div class="space-y-1">
+        <p class="font-medium text-gray-800">
+          {{ r.requesterCompany }}
+          <span class="text-gray-400 text-[11px] ml-1">#{{ r.id }}</span>
+        </p>
+        <p class="text-gray-500">
+          Trajet cible :
+          <span class="font-mono text-gray-700">{{ r.targetTripId }}</span>
+        </p>
+        <p class="text-gray-500">
+          Montant proposé :
+          <span class="font-semibold text-gray-800">{{ r.amount }} TND</span>
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2 md:text-right">
+        <span
+          class="inline-flex items-center rounded-full px-2 py-1 text-[11px]"
+          [ngClass]="{
+            'bg-yellow-100 text-yellow-700': r.status === 'pending',
+            'bg-green-100 text-green-700': r.status === 'accepted',
+            'bg-red-100 text-red-700': r.status === 'rejected'
+          }">
+          {{ r.status }}
+        </span>
+
+        <div class="flex gap-2 text-[11px]">
+          <button class="px-2 py-1 rounded-lg border border-green-200 text-green-700 hover:bg-green-50">
+            Accepter
+          </button>
+          <button class="px-2 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">
+            Refuser
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

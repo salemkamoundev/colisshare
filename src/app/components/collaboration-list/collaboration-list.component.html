@@ -1,0 +1,66 @@
+<div class="p-6">
+  <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">
+    Demandes de Collaboration Entrantes
+  </h2>
+
+  <div *ngIf="collaborationRequests | async as requests; else loading" class="space-y-4">
+    <div *ngIf="requests.length === 0" class="p-6 text-center text-gray-600 bg-white rounded-lg shadow-md">
+      <i class="fas fa-check-circle text-green-500 mr-2"></i>
+      Aucune nouvelle demande de collaboration en attente.
+    </div>
+
+    <div *ngFor="let request of requests" class="bg-white p-5 rounded-lg shadow-xl border-l-4 border-blue-500 hover:shadow-2xl transition duration-300">
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <p class="text-xl font-semibold text-gray-900">
+            Colis {{ request.packageDetails.id }}
+            <span class="text-sm font-normal text-gray-500 ml-2">
+              {{ request.packageDetails.weight }} kg
+            </span>
+          </p>
+          <p class="text-sm text-gray-600 mt-1">
+            Demandeur:
+            <span class="font-medium text-blue-700">{{ request.requesterCompanyId }}</span>
+          </p>
+        </div>
+        <div class="text-right">
+          <span class="text-2xl font-bold text-green-600">
+            {{ request.proposedAmount | currency:'EUR':'symbol':'1.2-2' }}
+          </span>
+          <p class="text-xs text-gray-500">Montant proposé</p>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 pt-3 mt-3 text-sm text-gray-700">
+        <p>
+          Trajet Ciblé (Votre):
+          <span class="font-medium text-purple-700">{{ request.targetTripId }}</span>
+        </p>
+        <p>Description: {{ request.packageDetails.description }}</p>
+      </div>
+
+      <div class="flex justify-end space-x-3 mt-4">
+        <button
+          (click)="declineRequest(request.id)"
+          class="px-4 py-2 bg-red-100 text-red-700 font-semibold rounded-lg hover:bg-red-200 transition duration-150"
+        >
+          <i class="fas fa-times-circle mr-2"></i>
+          Décliner
+        </button>
+        <button
+          (click)="acceptRequest(request)"
+          class="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150"
+        >
+          <i class="fas fa-check-circle mr-2"></i>
+          Accepter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #loading>
+    <div class="p-6 text-center text-gray-500">
+      Chargement des demandes en temps réel...
+    </div>
+  </ng-template>
+</div>

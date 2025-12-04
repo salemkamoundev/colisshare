@@ -1,0 +1,58 @@
+<div class="p-4 max-w-3xl space-y-4">
+  <div>
+    <h1 class="text-lg font-semibold text-gray-800">Saisie de trajet</h1>
+    <p class="text-xs text-gray-500">
+      Enregistrez un nouveau trajet et affectez-le à un véhicule.
+    </p>
+  </div>
+
+  <form class="bg-white rounded-xl shadow border border-gray-100 p-4 space-y-4 text-sm">
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Date de départ</label>
+        <input type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Heure de départ</label>
+        <input type="time" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Ville de départ</label>
+        <input type="text" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex : Tunis" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Ville d’arrivée</label>
+        <input type="text" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex : Sfax" />
+      </div>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Véhicule</label>
+        <select class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option>Choisir un véhicule</option>
+          <option>AA-123-BB - Renault Trafic</option>
+          <option>CC-456-DD - Peugeot Boxer</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Capacité dispo (kg)</label>
+        <input type="number" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Notes / instructions</label>
+      <textarea rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Infos complémentaires sur le trajet..."></textarea>
+    </div>
+
+    <div class="flex justify-end gap-2 text-xs">
+      <button type="button" class="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+        Annuler
+      </button>
+      <button type="submit" class="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+        Enregistrer le trajet
+      </button>
+    </div>
+  </form>
+</div>

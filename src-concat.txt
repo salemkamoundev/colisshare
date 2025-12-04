@@ -1,0 +1,2013 @@
+====== Fichier : ./src/index.html ======
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Colisshare</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
+
+
+====== Fichier : ./src/app/app.component.html ======
+<div class="min-h-screen bg-gray-100 flex flex-col">
+  <header class="bg-white border-b border-gray-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+          T
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Transport Collab</p>
+          <p class="text-[11px] text-gray-500">Dashboard</p>
+        </div>
+      </div>
+
+      <nav class="flex-1">
+        <ul class="flex flex-wrap justify-end gap-2 text-xs">
+          <li>
+            <a routerLink="/" routerLinkActive="bg-blue-50 text-blue-700"
+               [routerLinkActiveOptions]="{ exact: true }"
+               class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700">
+              Accueil
+            </a>
+          </li>
+          <li>
+            <a routerLink="/voitures" routerLinkActive="bg-blue-50 text-blue-700"
+               class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700">
+              Gestion des voitures
+            </a>
+          </li>
+          <li>
+            <a routerLink="/trajets/saisie" routerLinkActive="bg-blue-50 text-blue-700"
+               class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700">
+              Saisie de trajet
+            </a>
+          </li>
+          <li>
+            <a routerLink="/trajets/historique" routerLinkActive="bg-blue-50 text-blue-700"
+               class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700">
+              Historique des trajets
+            </a>
+          </li>
+          <li>
+            <a routerLink="/collaborations/demandes" routerLinkActive="bg-blue-50 text-blue-700"
+               class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700">
+              Demandes de collab
+            </a>
+          </li>
+          <li>
+            <a routerLink="/chat" routerLinkActive="bg-blue-50 text-blue-700"
+               class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700">
+              Chat
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl mx-auto w-full">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+
+====== Fichier : ./src/app/app-routing.module.ts ======
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+
+import { CarsManagementPageComponent } from './pages/cars-management/cars-management-page.component';
+import { TripFormPageComponent } from './pages/trip-form/trip-form-page.component';
+import { TripsHistoryPageComponent } from './pages/trips-history/trips-history-page.component';
+import { CollaborationRequestsPageComponent } from './pages/collab-requests/collab-requests-page.component';
+import { ChatPageComponent } from './pages/chat-page/chat-page.component';
+
+const routes: Routes = [
+  { path: '', redirectTo: 'trajets/saisie', pathMatch: 'full' },
+  { path: 'voitures', component: CarsManagementPageComponent },
+  { path: 'trajets/saisie', component: TripFormPageComponent },
+  { path: 'trajets/historique', component: TripsHistoryPageComponent },
+  { path: 'collaborations/demandes', component: CollaborationRequestsPageComponent },
+  { path: 'chat', component: ChatPageComponent },
+  { path: '**', redirectTo: 'trajets/saisie' },
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule],
+})
+export class AppRoutingModule {}
+
+
+====== Fichier : ./src/app/app.routes.ts ======
+import { Routes } from '@angular/router';
+
+import { HomePageComponent } from './pages/home/home-page.component';
+import { CarsManagementPageComponent } from './pages/cars-management/cars-management-page.component';
+import { TripFormPageComponent } from './pages/trip-form/trip-form-page.component';
+import { TripsHistoryPageComponent } from './pages/trips-history/trips-history-page.component';
+import { CollaborationRequestsPageComponent } from './pages/collab-requests/collab-requests-page.component';
+import { ChatPageComponent } from './pages/chat-page/chat-page.component';
+
+export const routes: Routes = [
+  { path: '', component: HomePageComponent },
+  { path: 'voitures', component: CarsManagementPageComponent },
+  { path: 'trajets/saisie', component: TripFormPageComponent },
+  { path: 'trajets/historique', component: TripsHistoryPageComponent },
+  { path: 'collaborations/demandes', component: CollaborationRequestsPageComponent },
+  { path: 'chat', component: ChatPageComponent },
+  { path: '**', redirectTo: '' },
+];
+
+
+====== Fichier : ./src/app/app.ts ======
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet],
+  templateUrl: './app.html',
+  styleUrl: './app.css'
+})
+export class App {
+  protected readonly title = signal('colisshare');
+}
+
+
+====== Fichier : ./src/app/app.css ======
+
+
+====== Fichier : ./src/app/app.component.ts ======
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+
+@Component({
+  standalone: true,
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+  ],
+})
+export class AppComponent {
+  // Tu peux garder un titre si besoin
+  title = 'transport-collab';
+}
+
+
+====== Fichier : ./src/app/components/chat/chat.component.ts ======
+import {
+  AfterViewChecked,
+  Component,
+  ElementRef,
+  Input,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+
+// ⚠️ Adapter l'import à l’emplacement réel de ton ChatService si différent
+import { ChatService } from '../../services/chat.service';
+
+export interface ChatMessage {
+  id?: string;
+  text: string;
+  senderId: string;
+  createdAt: number | Date;
+}
+
+@Component({
+  standalone: true,
+  selector: 'app-chat',
+  templateUrl: './chat.component.html',
+  imports: [CommonModule, FormsModule],
+})
+export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
+  @Input() conversationId!: string;
+  @Input() currentUserId!: string;
+
+  messages: ChatMessage[] = [];
+  draft = '';
+  sending = false;
+
+  private sub?: Subscription;
+
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLDivElement>;
+
+  constructor(private chatService: ChatService) {}
+
+  ngOnInit(): void {
+    if (!this.conversationId) {
+      console.warn('[ChatComponent] conversationId manquant');
+      return;
+    }
+
+    const svc: any = this.chatService as any;
+
+    if (typeof svc.listenToConversation === 'function') {
+      this.sub = svc
+        .listenToConversation(this.conversationId)
+        .subscribe({
+          next: (msgs: ChatMessage[]) => {
+            this.messages = msgs || [];
+          },
+          error: (err: any) => console.error('Erreur RTDB ChatService', err),
+        });
+    } else {
+      console.warn('[ChatComponent] ChatService.listenToConversation non implémenté');
+    }
+  }
+
+  ngAfterViewChecked(): void {
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    if (!this.scrollContainer) return;
+    const el = this.scrollContainer.nativeElement;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  async onSubmit(): Promise<void> {
+    const text = this.draft.trim();
+    if (!text || !this.conversationId || !this.currentUserId || this.sending) {
+      return;
+    }
+
+    this.sending = true;
+    try {
+      // Signature minimale : sendMessage(conversationId: string, text: string)
+      await (this.chatService as any).sendMessage(this.conversationId, text);
+      this.draft = '';
+    } catch (err: any) {
+      console.error('Erreur lors de l’envoi du message', err);
+    } finally {
+      this.sending = false;
+    }
+  }
+
+  trackByMsgId(_: number, msg: ChatMessage): string | undefined {
+    return msg.id;
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+}
+
+
+====== Fichier : ./src/app/components/chat/chat.component.html ======
+<div class="flex flex-col h-full max-h-screen bg-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+  <!-- En-tête -->
+  <div class="px-4 py-3 bg-white border-b border-gray-200 flex items-center justify-between">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-800">
+        Conversation
+      </h2>
+      <p class="text-xs text-gray-500">
+        {{ conversationId || 'Aucun ID de conversation fourni' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Zone messages -->
+  <div class="flex-1 flex flex-col max-h-[calc(100vh-9rem)]">
+    <div #scrollContainer class="flex-1 overflow-y-auto px-3 py-4 space-y-3">
+      <div *ngIf="messages.length === 0" class="h-full flex items-center justify-center">
+        <p class="text-xs text-gray-400 text-center">
+          Aucun message pour l’instant. Dites bonjour 👋
+        </p>
+      </div>
+
+      <div *ngFor="let msg of messages; trackBy: trackByMsgId"
+           class="flex"
+           [ngClass]="msg.senderId === currentUserId ? 'justify-end' : 'justify-start'">
+
+        <div class="max-w-xs md:max-w-md rounded-2xl px-4 py-2 shadow text-xs sm:text-sm"
+             [ngClass]="msg.senderId === currentUserId
+              ? 'bg-blue-600 text-white rounded-br-none'
+              : 'bg-white text-gray-800 rounded-bl-none'">
+
+          <p class="whitespace-pre-line break-words">
+            {{ msg.text }}
+          </p>
+
+          <p class="mt-1 text-[10px] opacity-70 text-right">
+            {{ msg.createdAt | date:'shortTime' }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone de saisie -->
+    <form (ngSubmit)="onSubmit()"
+          class="border-t border-gray-200 bg-white px-3 py-2 flex items-center gap-2">
+      <input
+        [(ngModel)]="draft"
+        name="message"
+        type="text"
+        autocomplete="off"
+        class="flex-1 rounded-full border border-gray-300 px-4 py-2 text-xs sm:text-sm
+               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+               bg-gray-50"
+        placeholder="Écrire un message..."
+      />
+
+      <button
+        type="submit"
+        [disabled]="!draft.trim() || sending"
+        class="inline-flex items-center justify-center rounded-full px-3 sm:px-4 py-2
+               text-xs sm:text-sm font-medium bg-blue-600 text-white
+               disabled:opacity-40 disabled:cursor-not-allowed
+               hover:bg-blue-700 transition">
+        <span *ngIf="!sending">Envoyer</span>
+        <span *ngIf="sending">...</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+
+====== Fichier : ./src/app/components/car-management/car-management.component.html ======
+<div class="p-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">🚗 Gestion du Parc Automobile</h2>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-xl">
+            <h3 class="text-xl font-semibold mb-4 text-blue-600">{{ isEditing ? 'Modifier la Voiture' : 'Ajouter une Nouvelle Voiture' }}</h3>
+            
+            <form [formGroup]="carForm" (ngSubmit)="onSubmit()" class="space-y-4">
+                
+                <div>
+                    <label for="licensePlate" class="block text-sm font-medium text-gray-700">Plaque d'Immatriculation</label>
+                    <input id="licensePlate" type="text" formControlName="licensePlate" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Ex: AA-123-BB">
+                    <div *ngIf="carForm.get('licensePlate')?.invalid && carForm.get('licensePlate')?.touched" class="text-red-500 text-xs mt-1">
+                        La plaque est obligatoire.
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="make" class="block text-sm font-medium text-gray-700">Marque</label>
+                        <input id="make" type="text" formControlName="make" 
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    </div>
+                    <div>
+                        <label for="model" class="block text-sm font-medium text-gray-700">Modèle</label>
+                        <input id="model" type="text" formControlName="model" 
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="year" class="block text-sm font-medium text-gray-700">Année</label>
+                    <input id="year" type="number" formControlName="year" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+
+                <div>
+                    <label for="assignedDriverId" class="block text-sm font-medium text-gray-700">ID Chauffeur Assigné (Optionnel)</label>
+                    <input id="assignedDriverId" type="text" formControlName="assignedDriverId" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+
+                <div class="flex items-center">
+                    <input id="isOperational" type="checkbox" formControlName="isOperational" 
+                           class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                    <label for="isOperational" class="ml-2 block text-sm font-medium text-gray-700">
+                        Opérationnelle
+                    </label>
+                </div>
+
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit" [disabled]="carForm.invalid"
+                            class="flex-1 px-4 py-2 text-white font-semibold rounded-md shadow transition duration-150"
+                            [ngClass]="carForm.invalid ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'">
+                        {{ isEditing ? 'Sauvegarder les Modifications' : 'Ajouter la Voiture' }}
+                    </button>
+
+                    <button type="button" *ngIf="isEditing" (click)="initForm()"
+                            class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md shadow hover:bg-gray-300 transition duration-150">
+                        Annuler / Nouveau
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="lg:col-span-2">
+            <h3 class="text-xl font-semibold mb-4 text-gray-800">Liste des Voitures</h3>
+            
+            <div *ngIf="(cars$ | async) as cars; else loading" class="space-y-3">
+                
+                <div *ngIf="cars.length === 0" class="p-4 text-center text-gray-500 bg-white rounded-lg shadow-inner">
+                    Aucune voiture enregistrée.
+                </div>
+
+                <div *ngFor="let car of cars" 
+                     class="bg-white p-4 rounded-lg shadow flex items-center justify-between transition duration-150 hover:shadow-lg"
+                     [ngClass]="{'border-l-4 border-blue-500': selectedCarId === car.id, 'border-l-4 border-gray-200': selectedCarId !== car.id}">
+                    
+                    <div>
+                        <p class="text-lg font-bold text-gray-900">{{ car.make }} {{ car.model }}</p>
+                        <p class="text-sm text-gray-600">Plaque: {{ car.licensePlate }}</p>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                              [ngClass]="car.isOperational ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                            {{ car.isOperational ? 'Opérationnelle' : 'Maintenance' }}
+                        </span>
+                    </div>
+
+                    <div class="space-x-2">
+                        <button (click)="onSelectCar(car)" 
+                                class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition duration-150"
+                                title="Modifier">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button (click)="onDeleteCar(car.id!)" 
+                                class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 transition duration-150"
+                                title="Supprimer">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <ng-template #loading>
+                <div class="text-center p-4 text-gray-500">Chargement des voitures...</div>
+            </ng-template>
+        </div>
+
+    </div>
+</div>
+
+
+====== Fichier : ./src/app/components/car-management/car-management.component.ts ======
+import { Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Car } from '../../interfaces/car.interface';
+import { FirestoreService } from '../../services/firestore.service';
+import { Observable } from 'rxjs';
+
+@Component({
+  selector: 'app-car-management',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './car-management.component.html',
+  styleUrls: [] 
+})
+export class CarManagementComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private firestoreService = inject(FirestoreService);
+  
+  private readonly COMPANY_ID = 'AbC1dE2fG3hI4jK5lM6n'; 
+
+  carForm!: FormGroup;
+  cars$!: Observable<Car[]>; // <--- LIGNE CRITIQUE : cars$! DOIT ÊTRE ICI
+  
+  isEditing = false;
+  selectedCarId: string | null = null;
+  
+  ngOnInit(): void {
+    this.initForm();
+    this.cars$ = this.firestoreService.getCars(this.COMPANY_ID); // <--- UTILISATION
+  }
+
+  initForm(car?: Car): void {
+    this.carForm = this.fb.group({
+      licensePlate: [car?.licensePlate || '', Validators.required],
+      make: [car?.make || '', Validators.required],
+      model: [car?.model || '', Validators.required],
+      year: [car?.year || null, [Validators.required, Validators.min(1900)]],
+      isOperational: [car?.isOperational ?? true, Validators.required],
+      assignedDriverId: [car?.assignedDriverId || '']
+    });
+
+    if (car) {
+      this.isEditing = true;
+      this.selectedCarId = car.id!;
+    } else {
+      this.isEditing = false;
+      this.selectedCarId = null;
+    }
+  }
+
+  onSelectCar(car: Car): void {
+    this.initForm(car);
+  }
+
+  onDeleteCar(carId: string): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette voiture ?')) {
+      this.firestoreService.deleteCar(carId)
+        .then(() => console.log('Voiture supprimée !'))
+        .catch(error => console.error('Erreur de suppression :', error));
+    }
+  }
+
+  onSubmit(): void {
+    if (this.carForm.invalid) {
+      alert('Veuillez remplir tous les champs requis.');
+      return;
+    }
+
+    const carData: Omit<Car, 'id'> = {
+      ...this.carForm.value,
+      companyId: this.COMPANY_ID,
+      year: Number(this.carForm.value.year)
+    };
+
+    if (this.isEditing && this.selectedCarId) {
+      const carToUpdate: Car = { ...carData, id: this.selectedCarId };
+      this.firestoreService.updateCar(carToUpdate)
+        .then(() => {
+          alert('Voiture mise à jour !');
+          this.initForm(); // Réinitialiser le formulaire
+        })
+        .catch(error => console.error('Erreur de mise à jour :', error));
+    } else {
+      this.firestoreService.addCar(carData)
+        .then(() => {
+          alert('Nouvelle voiture ajoutée !');
+          this.initForm(); // Réinitialiser le formulaire
+        })
+        .catch(error => console.error('Erreur d\'ajout :', error));
+    }
+  }
+}
+
+====== Fichier : ./src/app/components/trip-entry/trip-entry.component.ts ======
+import { Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray, AbstractControl } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { FirestoreService } from '../../services/firestore.service';
+import { Car } from '../../interfaces/car.interface';
+import { TripStep } from '../../interfaces/trip.interface';
+import { Observable } from 'rxjs';
+import { Timestamp } from '@angular/fire/firestore';
+
+@Component({
+  selector: 'app-trip-entry',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './trip-entry.component.html',
+  styleUrls: [] // ⬅️ Correction: Retrait du fichier CSS inexistant
+})
+export class TripEntryComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private firestoreService = inject(FirestoreService);
+  
+  private readonly COMPANY_ID = 'AbC1dE2fG3hI4jK5lM6n'; 
+  private readonly DRIVER_ID = 'UID_Current_Driver'; 
+
+  tripForm!: FormGroup;
+  availableCars$!: Observable<Car[]>; // ⬅️ Correction: Ajout du $ et !
+
+  ngOnInit(): void {
+    this.initForm();
+    // Charger uniquement les voitures opérationnelles pour cette société
+    this.availableCars$ = this.firestoreService.getCars(this.COMPANY_ID); // ⬅️ Correction: Utilisation du $
+  }
+
+  initForm(): void {
+    this.tripForm = this.fb.group({
+      carId: ['', Validators.required],
+      departureCity: ['', Validators.required],
+      arrivalCity: ['', Validators.required],
+      estimatedDepartureTime: ['', Validators.required], 
+      estimatedArrivalTime: ['', Validators.required], 
+      steps: this.fb.array([]) 
+    });
+    this.addStep(); 
+  }
+
+  get steps(): FormArray {
+    return this.tripForm.get('steps') as FormArray;
+  }
+
+  createStepGroup(step?: TripStep): FormGroup {
+    return this.fb.group({
+      city: [step?.city || '', Validators.required],
+      estimatedTime: [step?.estimatedTime || '', Validators.required] 
+    });
+  }
+
+  addStep(): void {
+    this.steps.push(this.createStepGroup());
+  }
+
+  removeStep(index: number): void {
+    this.steps.removeAt(index);
+  }
+
+  onSubmit(): void {
+    if (this.tripForm.invalid) {
+      alert('Veuillez remplir correctement tous les champs requis.');
+      return;
+    }
+
+    const formValue = this.tripForm.value;
+
+    const tripData = {
+      carId: formValue.carId,
+      companyId: this.COMPANY_ID,
+      driverId: this.DRIVER_ID,
+      departureCity: formValue.departureCity,
+      arrivalCity: formValue.arrivalCity,
+      estimatedDepartureTime: Timestamp.fromDate(new Date(formValue.estimatedDepartureTime)),
+      estimatedArrivalTime: Timestamp.fromDate(new Date(formValue.estimatedArrivalTime)),
+      status: 'pending' as const, 
+      steps: formValue.steps,
+    };
+
+    this.firestoreService.addTrip(tripData)
+      .then(() => {
+        alert('Trajet enregistré avec succès !');
+        this.initForm(); 
+      })
+      .catch(error => console.error('Erreur lors de l\'enregistrement du trajet :', error));
+  }
+}
+
+
+====== Fichier : ./src/app/components/trip-entry/trip-entry.component.html ======
+<div class="p-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">🗺️ Enregistrement d'un Nouveau Trajet</h2>
+
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-4xl mx-auto">
+        
+        <form [formGroup]="tripForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+            <div>
+                <label for="carId" class="block text-sm font-medium text-gray-700">Voiture Assignée</label>
+                <select id="carId" formControlName="carId" 
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white focus:ring-blue-500 focus:border-blue-500">
+                    <option value="" disabled>Sélectionner un véhicule</option>
+                    <ng-container *ngIf="(availableCars$ | async) as cars">
+                        <option *ngFor="let car of cars" [value]="car.id">
+                            {{ car.make }} {{ car.model }} ({{ car.licensePlate }})
+                        </option>
+                    </ng-container>
+                </select>
+                <div *ngIf="tripForm.get('carId')?.invalid && tripForm.get('carId')?.touched" class="text-red-500 text-xs mt-1">
+                    La sélection de la voiture est obligatoire.
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="departureCity" class="block text-sm font-medium text-gray-700">Ville de Départ</label>
+                    <input id="departureCity" type="text" formControlName="departureCity" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+                <div>
+                    <label for="arrivalCity" class="block text-sm font-medium text-gray-700">Ville d'Arrivée</label>
+                    <input id="arrivalCity" type="text" formControlName="arrivalCity" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="estimatedDepartureTime" class="block text-sm font-medium text-gray-700">Heure de Départ Estimée</label>
+                    <input id="estimatedDepartureTime" type="datetime-local" formControlName="estimatedDepartureTime" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+                <div>
+                    <label for="estimatedArrivalTime" class="block text-sm font-medium text-gray-700">Heure d'Arrivée Estimée</label>
+                    <input id="estimatedArrivalTime" type="datetime-local" formControlName="estimatedArrivalTime" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+            </div>
+
+            <div class="border border-gray-200 p-4 rounded-lg bg-gray-50">
+                <h4 class="text-lg font-semibold mb-3 text-gray-700">Étapes Intermédiaires (Stops)</h4>
+                
+                <div formArrayName="steps" class="space-y-4">
+                    <div *ngFor="let stepGroup of steps.controls; let i = index" [formGroupName]="i" 
+                         class="flex items-center space-x-3 p-2 bg-white rounded shadow-sm">
+                        
+                        <div class="flex-1">
+                            <label class="block text-xs font-medium text-gray-500">Ville</label>
+                            <input type="text" formControlName="city" placeholder="Ville de l'étape {{ i + 1 }}" 
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-1.5 text-sm">
+                        </div>
+
+                        <div class="w-32">
+                            <label class="block text-xs font-medium text-gray-500">Heure (HH:MM)</label>
+                            <input type="time" formControlName="estimatedTime" 
+                                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-1.5 text-sm">
+                        </div>
+
+                        <button type="button" (click)="removeStep(i)" 
+                                class="text-red-500 hover:text-red-700 transition duration-150"
+                                title="Supprimer cette étape">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" (click)="addStep()" 
+                        class="mt-4 px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-150">
+                    <i class="fas fa-plus mr-2"></i> Ajouter une Étape
+                </button>
+            </div>
+
+
+            <button type="submit" [disabled]="tripForm.invalid"
+                    class="w-full px-4 py-3 text-lg text-white font-semibold rounded-md shadow transition duration-150"
+                    [ngClass]="tripForm.invalid ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'">
+                Enregistrer le Trajet
+            </button>
+
+        </form>
+    </div>
+</div>
+
+
+====== Fichier : ./src/app/components/dashboard/dashboard.component.html ======
+<div class="flex h-screen bg-gray-100">
+
+    <aside class="w-64 flex-shrink-0 bg-gray-800 text-white flex flex-col justify-between">
+        
+        <div class="p-4">
+            <h1 class="text-2xl font-bold border-b border-gray-700 pb-3">
+                <span class="text-blue-400">Colis</span>Share
+            </h1>
+            <div class="mt-4 space-y-2 text-sm text-gray-400">
+                <p><i class="fas fa-truck mr-2"></i> Voitures Opé: <span class="font-semibold text-blue-300">XX</span></p>
+                <p><i class="fas fa-user-friends mr-2"></i> Chauffeurs: <span class="font-semibold text-blue-300">YY</span></p>
+            </div>
+        </div>
+        
+        <nav class="flex-grow p-4 space-y-2">
+            <a routerLink="/dashboard/cars" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-car text-blue-400 w-6"></i>
+                <span class="ml-3">Gestion des Voitures</span>
+            </a>
+            <a routerLink="/dashboard/trips" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-road text-blue-400 w-6"></i>
+                <span class="ml-3">Saisie de Trajet</span>
+            </a>
+            <a routerLink="/dashboard/history" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-history text-blue-400 w-6"></i>
+                <span class="ml-3">Historique des Trajets</span>
+            </a>
+            <a routerLink="/dashboard/collaborations" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-handshake text-blue-400 w-6"></i>
+                <span class="ml-3">Demandes de Collab</span>
+            </a>
+            <a routerLink="/dashboard/chat" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-comments text-blue-400 w-6"></i>
+                <span class="ml-3">Chat</span>
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-gray-700">
+            <button class="w-full flex items-center p-3 rounded-lg text-red-400 hover:bg-gray-700 transition duration-200">
+                <i class="fas fa-sign-out-alt w-6"></i>
+                <span class="ml-3">Déconnexion</span>
+            </button>
+        </div>
+        
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        
+        <header class="flex items-center justify-between p-4 bg-white shadow-md border-b">
+            <h2 class="text-xl font-semibold text-gray-800">Application ColisShare</h2>
+            <div class="flex items-center space-x-4">
+                <i class="far fa-bell text-gray-600 hover:text-blue-500 cursor-pointer"></i>
+                <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm">PR</div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-6">
+            <router-outlet></router-outlet>
+        </main>
+        
+    </div>
+</div>
+
+
+====== Fichier : ./src/app/components/dashboard/dashboard.component.ts ======
+import { Component } from '@angular/core';
+import { RouterLink, RouterOutlet } from '@angular/router';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, RouterLink, RouterOutlet],
+  templateUrl: './dashboard.component.html',
+  styleUrls: [] // ⬅️ Correction
+})
+export class DashboardComponent {}
+
+
+====== Fichier : ./src/app/components/trip-map/trip-map.component.html ======
+<div class="w-full h-full bg-white rounded-lg shadow-lg">
+    <div 
+        style="height: 500px;" 
+        leaflet 
+        [leafletOptions]="options" 
+        [leafletLayers]="layers"
+        (leafletMapReady)="onMapReady($event)"
+        class="rounded-lg"
+    >
+    </div>
+</div>
+
+
+====== Fichier : ./src/app/components/trip-map/trip-map.component.ts ======
+import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { LeafletModule } from '@asymmetrik/ngx-leaflet';
+import * as L from 'leaflet';
+import { latLng, tileLayer, Map, Polyline, Layer } from 'leaflet';
+
+// Interface pour les points de données de trajectoire
+export interface GeoPoint {
+  lat: number;
+  lng: number;
+  timestamp: number; // UNIX timestamp
+}
+
+@Component({
+  selector: 'app-trip-map',
+  standalone: true,
+  imports: [CommonModule, LeafletModule],
+  templateUrl: './trip-map.component.html',
+  styleUrls: []
+})
+export class TripMapComponent implements OnChanges {
+  // Entrée des coordonnées du trajet depuis le composant parent
+  @Input() coordinates: GeoPoint[] = [];
+
+  // Options Leaflet
+  options = {
+    layers: [
+      // Couche de tuiles OpenStreetMap
+      tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+        maxZoom: 18, 
+        attribution: 'OpenStreetMap' 
+      })
+    ],
+    zoom: 13,
+    // Coordonnées initiales (Paris comme centre par défaut)
+    center: latLng(48.8566, 2.3522)
+  };
+
+  layers: Layer[] = [];
+  map!: Map;
+
+  // Lorsque la carte est initialisée
+  onMapReady(map: Map) {
+    this.map = map;
+    this.drawPath();
+  }
+
+  // Appelé lorsque l'Input 'coordinates' change
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['coordinates'] && this.map) {
+      this.drawPath();
+    }
+  }
+
+  private drawPath(): void {
+    if (!this.coordinates || this.coordinates.length === 0) {
+      this.layers = [];
+      return;
+    }
+
+    // 1. Convertir les GeoPoints en objets LatLng pour Leaflet
+    const latLngs = this.coordinates
+      .map(p => L.latLng(p.lat, p.lng));
+
+    // 2. Créer la polyline (le tracé)
+    const polyline = new Polyline(latLngs as any, { 
+      color: '#007bff', // Couleur du tracé (bleu Bootstrap)
+      weight: 5,
+      opacity: 0.7 
+    });
+
+    // 3. Marqueur de départ
+    const startMarker = L.marker(latLngs[0], {
+      icon: L.icon({
+        iconUrl: 'assets/marker-icon-start.png', // Chemin à ajuster
+        iconSize: [25, 41],
+        iconAnchor: [12, 41]
+      })
+    }).bindPopup('Départ du trajet');
+
+    // 4. Marqueur d'arrivée
+    const endMarker = L.marker(latLngs[latLngs.length - 1], {
+      icon: L.icon({
+        iconUrl: 'assets/marker-icon-end.png', // Chemin à ajuster
+        iconSize: [25, 41],
+        iconAnchor: [12, 41]
+      })
+    }).bindPopup('Arrivée du trajet');
+
+
+    // Mettre à jour les calques de la carte
+    this.layers = [polyline, startMarker, endMarker];
+
+    // Ajuster le centre de la carte pour afficher l'ensemble du tracé
+    this.map.fitBounds(polyline.getBounds());
+  }
+}
+
+
+====== Fichier : ./src/app/components/collaboration-list/collaboration-list.component.html ======
+<div class="p-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">🤝 Demandes de Collaboration Entrantes</h2>
+
+    <div *ngIf="(collaborationRequests$ | async) as requests; else loading" class="space-y-4">
+        
+        <div *ngIf="requests.length === 0" class="p-6 text-center text-gray-600 bg-white rounded-lg shadow-md">
+            <i class="fas fa-check-circle text-green-500 mr-2"></i> Aucune nouvelle demande de collaboration en attente.
+        </div>
+
+        <div *ngFor="let request of requests" class="bg-white p-5 rounded-lg shadow-xl border-l-4 border-blue-500 hover:shadow-2xl transition duration-300">
+            
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <p class="text-xl font-semibold text-gray-900">
+                        Colis #{{ request.packageDetails.id }} 
+                        <span class="text-sm font-normal text-gray-500 ml-2">({{ request.packageDetails.weight }} kg)</span>
+                    </p>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Demandeur: <span class="font-medium text-blue-700">{{ request.requesterCompanyId }}</span>
+                    </p>
+                </div>
+                
+                <div class="text-right">
+                    <span class="text-2xl font-bold text-green-600">{{ request.proposedAmount | currency:'EUR':'symbol':'1.2-2' }}</span>
+                    <p class="text-xs text-gray-500">Montant proposé</p>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100 pt-3 mt-3 text-sm text-gray-700">
+                <p>Trajet Ciblé (Votre): <span class="font-medium text-purple-700">{{ request.targetTripId }}</span></p>
+                <p>Description: {{ request.packageDetails.description }}</p>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-4">
+                <button (click)="declineRequest(request.id)"
+                        class="px-4 py-2 bg-red-100 text-red-700 font-semibold rounded-lg hover:bg-red-200 transition duration-150">
+                    <i class="fas fa-times-circle mr-2"></i> Décliner
+                </button>
+                <button (click)="acceptRequest(request)"
+                        class="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150">
+                    <i class="fas fa-check-circle mr-2"></i> Accepter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <ng-template #loading>
+        <div class="p-6 text-center text-gray-500">
+            Chargement des demandes en temps réel...
+        </div>
+    </ng-template>
+</div>
+
+
+====== Fichier : ./src/app/components/collaboration-list/collaboration-list.component.ts ======
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Observable } from 'rxjs';
+import { Firestore, collection, collectionData, query, where, doc, updateDoc, writeBatch, Timestamp } from '@angular/fire/firestore';
+import { CollaborationRequest } from '../../services/firestore.service'; // Utilise l'interface définie dans le service
+
+@Component({
+  selector: 'app-collaboration-list',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './collaboration-list.component.html',
+  styleUrls: [] 
+})
+export class CollaborationListComponent implements OnInit {
+  private firestore = inject(Firestore);
+  
+  // 🚨 REMPLACEZ CETTE VALEUR PAR L'ID DE LA SOCIÉTÉ ACTUELLE (L'utilisateur connecté)
+  // Qui est la cible des requêtes (targetCompanyId)
+  private readonly CURRENT_COMPANY_ID = 'AbC1dE2fG3hI4jK5lM6n'; 
+
+  collaborationRequests$!: Observable<CollaborationRequest[]>;
+
+  ngOnInit(): void {
+    this.collaborationRequests$ = this.getCollaborationRequests();
+  }
+
+  /**
+   * Écoute en temps réel la collection collaborationRequests.
+   * Filtre les demandes où l'ID de la société actuelle est la cible.
+   */
+  getCollaborationRequests(): Observable<CollaborationRequest[]> {
+    const requestsCollection = collection(this.firestore, 'collaborationRequests');
+    // Requête : Filtrer par targetCompanyId et où le statut est 'pending'
+    const q = query(
+      requestsCollection, 
+      where('targetCompanyId', '==', this.CURRENT_COMPANY_ID),
+      where('status', '==', 'pending')
+    );
+    // Retourne l'Observable en temps réel (snapshotChanges)
+    return collectionData(q, { idField: 'id' }) as Observable<CollaborationRequest[]>;
+  }
+
+
+  /**
+   * ACTION ACCEPTER : Mise à jour du statut et création d'une référence croisée.
+   * @param request La demande acceptée.
+   */
+  async acceptRequest(request: CollaborationRequest & { id: string }): Promise<void> {
+    if (!confirm(`Accepter la collaboration pour le colis ${request.packageDetails.id} ?`)) {
+      return;
+    }
+
+    // Utilisation d'un batch pour garantir l'atomicité des opérations : si l'une échoue, toutes échouent.
+    const batch = writeBatch(this.firestore);
+
+    // 1. Mise à jour du statut dans collaborationRequests
+    const requestDocRef = doc(this.firestore, 'collaborationRequests', request.id);
+    batch.update(requestDocRef, { 
+        status: 'accepted',
+        acceptedAt: Timestamp.now()
+    });
+
+    // 2. Création d'une référence croisée pour le suivi du colis (dans une collection de suivi de colis ou trips)
+    // Nous allons utiliser une nouvelle collection 'shipmentTracking' pour simplifier la jointure.
+    const shipmentTrackingRef = doc(this.firestore, 'shipmentTracking', request.packageDetails.id);
+    batch.set(shipmentTrackingRef, {
+        packageId: request.packageDetails.id,
+        status: 'COLLABORATION_ACCEPTED',
+        originalCompanyId: request.requesterCompanyId,
+        deliveryCompanyId: this.CURRENT_COMPANY_ID,
+        assignedTripId: request.targetTripId,
+        acceptedAmount: request.proposedAmount,
+        lastUpdated: Timestamp.now()
+    }, { merge: true }); // Utiliser merge pour ne pas écraser d'anciennes données du colis
+
+    try {
+      await batch.commit();
+      alert('Demande acceptée et suivi du colis mis à jour !');
+    } catch (error) {
+      console.error('Erreur lors de l\'acceptation de la demande (Batch failed):', error);
+      alert('Erreur lors de l\'acceptation.');
+    }
+  }
+
+
+  /**
+   * ACTION DÉCLINER : Mise à jour du statut.
+   * @param requestId L'ID de la demande.
+   */
+  async declineRequest(requestId: string): Promise<void> {
+    if (!confirm('Décliner cette demande de collaboration ?')) {
+      return;
+    }
+    const requestDocRef = doc(this.firestore, 'collaborationRequests', requestId);
+    
+    try {
+      await updateDoc(requestDocRef, { 
+          status: 'rejected',
+          rejectedAt: Timestamp.now()
+      });
+      alert('Demande déclinée.');
+    } catch (error) {
+      console.error('Erreur lors du déclin de la demande:', error);
+    }
+  }
+}
+
+
+====== Fichier : ./src/app/app.config.ts ======
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
+
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes)
+  ]
+};
+
+
+====== Fichier : ./src/app/app.component.css ======
+
+
+====== Fichier : ./src/app/app.html ======
+<router-outlet />
+
+
+====== Fichier : ./src/app/pages/home/home-page.component.ts ======
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+interface HomeSlide {
+  title: string;
+  subtitle: string;
+  description: string;
+  tag: string;
+}
+
+@Component({
+  standalone: true,
+  selector: 'app-home-page',
+  templateUrl: './home-page.component.html',
+  imports: [CommonModule],
+})
+export class HomePageComponent {
+  slides: HomeSlide[] = [
+    {
+      title: 'Bienvenue sur Transport Collab',
+      subtitle: 'Optimisez vos trajets, partagez vos capacités.',
+      description:
+        'Cette application vous aide à gérer vos véhicules, planifier vos trajets et collaborer avec d’autres transporteurs pour rentabiliser chaque kilomètre.',
+      tag: 'Présentation',
+    },
+    {
+      title: 'Gestion des voitures',
+      subtitle: 'Centralisez votre flotte.',
+      description:
+        'Ajoutez, modifiez et désactivez vos véhicules. Visualisez rapidement leur capacité et leur disponibilité pour les prochains trajets.',
+      tag: 'Flotte',
+    },
+    {
+      title: 'Saisie & Historique des trajets',
+      subtitle: 'Suivez vos opérations.',
+      description:
+        'Déclarez facilement un nouveau trajet et gardez un historique clair des trajets passés, en cours ou planifiés.',
+      tag: 'Trajets',
+    },
+    {
+      title: 'Demandes de collaboration',
+      subtitle: 'Partagez vos capacités avec d’autres.',
+      description:
+        'Recevez et gérez les demandes de collab sur vos trajets : acceptez, refusez et négociez pour optimiser vos tournées.',
+      tag: 'Collaboration',
+    },
+    {
+      title: 'Chat temps réel',
+      subtitle: 'Communiquez sans friction.',
+      description:
+        'Discutez avec vos partenaires directement depuis l’application pour régler les détails d’un trajet ou d’un colis en quelques messages.',
+      tag: 'Communication',
+    },
+  ];
+
+  activeIndex = 0;
+
+  nextSlide(): void {
+    this.activeIndex = (this.activeIndex + 1) % this.slides.length;
+  }
+
+  prevSlide(): void {
+    this.activeIndex =
+      (this.activeIndex - 1 + this.slides.length) % this.slides.length;
+  }
+
+  goToSlide(index: number): void {
+    this.activeIndex = index;
+  }
+}
+
+
+====== Fichier : ./src/app/pages/home/home-page.component.html ======
+<div class="min-h-[calc(100vh-4rem)] w-full px-4 py-6 flex flex-col gap-6">
+
+  <!-- Bandeau + slider -->
+  <section class="bg-white rounded-2xl shadow border border-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-6 items-center">
+    <div class="flex-1 space-y-3">
+      <p class="inline-flex items-center gap-2 text-[11px] font-medium text-blue-700 bg-blue-50 rounded-full px-3 py-1">
+        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        {{ slides[activeIndex].tag }}
+      </p>
+
+      <h1 class="text-xl md:text-2xl font-semibold text-gray-900">
+        {{ slides[activeIndex].title }}
+      </h1>
+
+      <p class="text-sm text-gray-600">
+        {{ slides[activeIndex].subtitle }}
+      </p>
+
+      <p class="text-xs md:text-sm text-gray-500 leading-relaxed">
+        {{ slides[activeIndex].description }}
+      </p>
+
+      <div class="flex flex-wrap items-center gap-2 pt-2">
+        <button
+          type="button"
+          class="px-3 py-2 rounded-full bg-blue-600 text-white text-xs hover:bg-blue-700 transition"
+          routerLink="/trajets/saisie">
+          Commencer un trajet
+        </button>
+        <button
+          type="button"
+          class="px-3 py-2 rounded-full border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 transition"
+          routerLink="/voitures">
+          Voir mes véhicules
+        </button>
+      </div>
+    </div>
+
+    <div class="w-full md:w-80 lg:w-96">
+      <div class="relative h-52 md:h-60 rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-500 text-white overflow-hidden flex items-end">
+        <div class="absolute inset-0 opacity-10 pointer-events-none">
+          <div class="w-40 h-40 rounded-full border border-white/40 absolute -top-8 -left-8"></div>
+          <div class="w-52 h-52 rounded-full border border-white/30 absolute -bottom-12 right-4"></div>
+        </div>
+
+        <div class="p-4 md:p-5 z-10 w-full">
+          <p class="text-[11px] uppercase tracking-wide text-blue-100 mb-1">
+            Tutoriel rapide
+          </p>
+          <p class="text-sm font-semibold mb-3">
+            1. Configurez vos véhicules<br>
+            2. Déclarez vos trajets<br>
+            3. Gérez les collabs<br>
+            4. Discutez dans le chat
+          </p>
+
+          <div class="flex items-center justify-between text-[10px]">
+            <div class="space-y-1">
+              <p class="uppercase tracking-wide text-blue-100">
+                Progression
+              </p>
+              <div class="w-28 h-1.5 rounded-full bg-white/30 overflow-hidden">
+                <div class="h-full bg-white/90" style="width: 65%;"></div>
+              </div>
+              <p class="text-blue-50">Vous êtes prêt à démarrer 🚚</p>
+            </div>
+
+            <div class="text-right">
+              <p class="text-blue-100 mb-1">
+                Astuce
+              </p>
+              <p class="text-[11px] text-blue-50">
+                Utilisez ce dashboard pour accéder à toutes les sections clés.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contrôles du slider -->
+      <div class="mt-3 flex items-center justify-between text-[11px] text-gray-500">
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="prevSlide()"
+            class="px-2 py-1 rounded-full border border-gray-300 hover:bg-gray-50">
+            ◀
+          </button>
+          <button
+            type="button"
+            (click)="nextSlide()"
+            class="px-2 py-1 rounded-full border border-gray-300 hover:bg-gray-50">
+            ▶
+          </button>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button
+            *ngFor="let s of slides; let i = index"
+            type="button"
+            (click)="goToSlide(i)"
+            class="w-2.5 h-2.5 rounded-full border"
+            [ngClass]="i === activeIndex ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 border-gray-300'">
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENUS DASHBOARD : accès rapide à toutes les pages -->
+  <section class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+    <!-- Accueil / Vue d'ensemble -->
+    <a
+      routerLink="/"
+      [routerLinkActive]="'ring-2 ring-blue-400 ring-offset-2'"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-blue-600">Dashboard</p>
+      <h2 class="text-sm font-semibold text-gray-800">Vue d’ensemble</h2>
+      <p class="text-xs text-gray-500">
+        Accédez rapidement au tutoriel, à l’état global de votre flotte et à toutes les fonctionnalités.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Rester sur la page d’accueil
+      </span>
+    </a>
+
+    <!-- Gestion des voitures -->
+    <a
+      routerLink="/voitures"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Flotte</p>
+      <h2 class="text-sm font-semibold text-gray-800">Gestion des voitures</h2>
+      <p class="text-xs text-gray-500">
+        Ajoutez / modifiez vos véhicules, visualisez la capacité et l’activité de votre flotte.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Ouvrir la gestion des voitures →
+      </span>
+    </a>
+
+    <!-- Saisie de trajet -->
+    <a
+      routerLink="/trajets/saisie"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Opérations</p>
+      <h2 class="text-sm font-semibold text-gray-800">Saisie de trajet</h2>
+      <p class="text-xs text-gray-500">
+        Déclarez un nouveau trajet, choisissez un véhicule et indiquez la capacité disponible.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Créer un trajet →
+      </span>
+    </a>
+
+    <!-- Historique des trajets -->
+    <a
+      routerLink="/trajets/historique"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Suivi</p>
+      <h2 class="text-sm font-semibold text-gray-800">Historique des trajets</h2>
+      <p class="text-xs text-gray-500">
+        Consultez vos trajets passés, en cours et planifiés. Filtrez par date ou statut.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Voir l’historique →
+      </span>
+    </a>
+
+    <!-- Demandes de collab -->
+    <a
+      routerLink="/collaborations/demandes"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Collaboration</p>
+      <h2 class="text-sm font-semibold text-gray-800">Demandes de collab</h2>
+      <p class="text-xs text-gray-500">
+        Gérez les demandes de collaboration entrantes sur vos trajets et acceptez les plus pertinentes.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Gérer les collabs →
+      </span>
+    </a>
+
+    <!-- Chat -->
+    <a
+      routerLink="/chat"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Communication</p>
+      <h2 class="text-sm font-semibold text-gray-800">Chat</h2>
+      <p class="text-xs text-gray-500">
+        Discutez en temps réel avec vos partenaires pour affiner les détails d’un trajet ou d’un colis.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Ouvrir le chat →
+      </span>
+    </a>
+  </section>
+</div>
+
+
+====== Fichier : ./src/app/pages/trips-history/trips-history-page.component.html ======
+<div class="p-4 space-y-4">
+  <div class="flex items-center justify-between gap-2">
+    <div>
+      <h1 class="text-lg font-semibold text-gray-800">Historique des trajets</h1>
+      <p class="text-xs text-gray-500">Consultez les trajets passés et en cours.</p>
+    </div>
+
+    <div class="flex gap-2 text-xs">
+      <input type="date" class="rounded-lg border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <select class="rounded-lg border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">Tous les statuts</option>
+        <option>planifié</option>
+        <option>en cours</option>
+        <option>terminé</option>
+        <option>annulé</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-4 py-3 text-left">ID</th>
+          <th class="px-4 py-3 text-left">Date</th>
+          <th class="px-4 py-3 text-left">De</th>
+          <th class="px-4 py-3 text-left">À</th>
+          <th class="px-4 py-3 text-left">Véhicule</th>
+          <th class="px-4 py-3 text-left">Statut</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr *ngFor="let t of trips">
+          <td class="px-4 py-3 text-xs font-mono text-gray-600">{{ t.id }}</td>
+          <td class="px-4 py-3 text-xs">{{ t.date }}</td>
+          <td class="px-4 py-3 text-xs">{{ t.from }}</td>
+          <td class="px-4 py-3 text-xs">{{ t.to }}</td>
+          <td class="px-4 py-3 text-xs">{{ t.vehicle }}</td>
+          <td class="px-4 py-3 text-xs">
+            <span class="inline-flex items-center rounded-full px-2 py-1 text-[11px] bg-gray-100 text-gray-700">
+              {{ t.status }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+====== Fichier : ./src/app/pages/trips-history/trips-history-page.component.ts ======
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+interface TripHistoryItem {
+  id: string;
+  date: string;
+  from: string;
+  to: string;
+  vehicle: string;
+  status: 'planifié' | 'en cours' | 'terminé' | 'annulé';
+}
+
+@Component({
+  standalone: true,
+  selector: 'app-trips-history-page',
+  templateUrl: './trips-history-page.component.html',
+  imports: [CommonModule],
+})
+export class TripsHistoryPageComponent {
+  trips: TripHistoryItem[] = [
+    { id: 'T-001', date: '2025-12-01', from: 'Tunis', to: 'Sfax', vehicle: 'AA-123-BB', status: 'terminé' },
+    { id: 'T-002', date: '2025-12-02', from: 'Sousse', to: 'Tunis', vehicle: 'CC-456-DD', status: 'en cours' },
+    { id: 'T-003', date: '2025-12-03', from: 'Tunis', to: 'Bizerte', vehicle: 'AA-123-BB', status: 'planifié' },
+  ];
+}
+
+
+====== Fichier : ./src/app/pages/cars-management/cars-management-page.component.ts ======
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+interface Vehicle {
+  plateNumber: string;
+  brand: string;
+  model: string;
+  capacityKg: number;
+  active: boolean;
+}
+
+@Component({
+  standalone: true,
+  selector: 'app-cars-management-page',
+  templateUrl: './cars-management-page.component.html',
+  imports: [CommonModule],
+})
+export class CarsManagementPageComponent {
+  vehicles: Vehicle[] = [
+    { plateNumber: 'AA-123-BB', brand: 'Renault', model: 'Trafic', capacityKg: 1000, active: true },
+    { plateNumber: 'CC-456-DD', brand: 'Peugeot', model: 'Boxer', capacityKg: 1200, active: true },
+    { plateNumber: 'EE-789-FF', brand: 'Mercedes', model: 'Sprinter', capacityKg: 1500, active: false },
+  ];
+}
+
+
+====== Fichier : ./src/app/pages/cars-management/cars-management-page.component.html ======
+<div class="p-4 space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-lg font-semibold text-gray-800">Gestion des voitures</h1>
+      <p class="text-xs text-gray-500">Liste des véhicules disponibles pour les trajets.</p>
+    </div>
+
+    <button
+      class="rounded-lg bg-blue-600 text-white text-xs px-3 py-2 hover:bg-blue-700 transition">
+      + Ajouter une voiture
+    </button>
+  </div>
+
+  <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-4 py-3 text-left">Immatriculation</th>
+          <th class="px-4 py-3 text-left">Marque</th>
+          <th class="px-4 py-3 text-left">Modèle</th>
+          <th class="px-4 py-3 text-right">Capacité (kg)</th>
+          <th class="px-4 py-3 text-center">Statut</th>
+          <th class="px-4 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr *ngFor="let v of vehicles">
+          <td class="px-4 py-3">{{ v.plateNumber }}</td>
+          <td class="px-4 py-3">{{ v.brand }}</td>
+          <td class="px-4 py-3">{{ v.model }}</td>
+          <td class="px-4 py-3 text-right">{{ v.capacityKg }}</td>
+          <td class="px-4 py-3 text-center">
+            <span
+              class="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium"
+              [ngClass]="v.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+              {{ v.active ? 'Actif' : 'Inactif' }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-right space-x-2 text-xs">
+            <button class="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">
+              Modifier
+            </button>
+            <button class="px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50">
+              Désactiver
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+====== Fichier : ./src/app/pages/chat-page/chat-page.component.ts ======
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  standalone: true,
+  selector: 'app-chat-page',
+  templateUrl: './chat-page.component.html',
+  imports: [CommonModule],
+})
+export class ChatPageComponent {
+  // Quand tu brancheras <app-chat>, tu pourras exposer ici :
+  // selectedConversationId = 'demo-conversation';
+  // currentUserId = 'demo-user';
+}
+
+
+====== Fichier : ./src/app/pages/chat-page/chat-page.component.html ======
+<div class="p-4 h-full flex flex-col">
+  <h1 class="text-lg font-semibold text-gray-800 mb-2">Chat</h1>
+  <p class="text-xs text-gray-500 mb-4">
+    Interface de messagerie entre transporteurs / collaborateurs.
+  </p>
+
+  <div class="flex-1 min-h-[300px] flex items-center justify-center border border-dashed border-gray-300 rounded-xl bg-gray-50 text-xs text-gray-500 text-center px-4">
+    Placeholder de la page de chat.
+    Branche ici ton composant &lt;app-chat&gt; plus tard.
+  </div>
+</div>
+
+
+====== Fichier : ./src/app/pages/trip-form/trip-form-page.component.ts ======
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  standalone: true,
+  selector: 'app-trip-form-page',
+  templateUrl: './trip-form-page.component.html',
+  imports: [CommonModule],
+})
+export class TripFormPageComponent {}
+
+
+====== Fichier : ./src/app/pages/trip-form/trip-form-page.component.html ======
+<div class="p-4 max-w-3xl space-y-4">
+  <div>
+    <h1 class="text-lg font-semibold text-gray-800">Saisie de trajet</h1>
+    <p class="text-xs text-gray-500">
+      Enregistrez un nouveau trajet et affectez-le à un véhicule.
+    </p>
+  </div>
+
+  <form class="bg-white rounded-xl shadow border border-gray-100 p-4 space-y-4 text-sm">
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Date de départ</label>
+        <input type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Heure de départ</label>
+        <input type="time" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Ville de départ</label>
+        <input type="text" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex : Tunis" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Ville d’arrivée</label>
+        <input type="text" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex : Sfax" />
+      </div>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Véhicule</label>
+        <select class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option>Choisir un véhicule</option>
+          <option>AA-123-BB - Renault Trafic</option>
+          <option>CC-456-DD - Peugeot Boxer</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Capacité dispo (kg)</label>
+        <input type="number" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Notes / instructions</label>
+      <textarea rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Infos complémentaires sur le trajet..."></textarea>
+    </div>
+
+    <div class="flex justify-end gap-2 text-xs">
+      <button type="button" class="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+        Annuler
+      </button>
+      <button type="submit" class="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+        Enregistrer le trajet
+      </button>
+    </div>
+  </form>
+</div>
+
+
+====== Fichier : ./src/app/pages/collab-requests/collab-requests-page.component.html ======
+<div class="p-4 space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-lg font-semibold text-gray-800">Demandes de collaboration</h1>
+      <p class="text-xs text-gray-500">
+        Gérez les demandes de collaboration entrantes sur vos trajets.
+      </p>
+    </div>
+
+    <div class="flex gap-2 text-xs">
+      <select class="rounded-lg border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">Tous les statuts</option>
+        <option value="pending">En attente</option>
+        <option value="accepted">Acceptées</option>
+        <option value="rejected">Rejetées</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="space-y-2">
+    <div
+      *ngFor="let r of requests"
+      class="bg-white rounded-xl shadow border border-gray-100 px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs">
+      <div class="space-y-1">
+        <p class="font-medium text-gray-800">
+          {{ r.requesterCompany }}
+          <span class="text-gray-400 text-[11px] ml-1">#{{ r.id }}</span>
+        </p>
+        <p class="text-gray-500">
+          Trajet cible :
+          <span class="font-mono text-gray-700">{{ r.targetTripId }}</span>
+        </p>
+        <p class="text-gray-500">
+          Montant proposé :
+          <span class="font-semibold text-gray-800">{{ r.amount }} TND</span>
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2 md:text-right">
+        <span
+          class="inline-flex items-center rounded-full px-2 py-1 text-[11px]"
+          [ngClass]="{
+            'bg-yellow-100 text-yellow-700': r.status === 'pending',
+            'bg-green-100 text-green-700': r.status === 'accepted',
+            'bg-red-100 text-red-700': r.status === 'rejected'
+          }">
+          {{ r.status }}
+        </span>
+
+        <div class="flex gap-2 text-[11px]">
+          <button class="px-2 py-1 rounded-lg border border-green-200 text-green-700 hover:bg-green-50">
+            Accepter
+          </button>
+          <button class="px-2 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">
+            Refuser
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+====== Fichier : ./src/app/pages/collab-requests/collab-requests-page.component.ts ======
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+interface CollaborationRequestItem {
+  id: string;
+  requesterCompany: string;
+  targetTripId: string;
+  amount: number;
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
+@Component({
+  standalone: true,
+  selector: 'app-collab-requests-page',
+  templateUrl: './collab-requests-page.component.html',
+  imports: [CommonModule],
+})
+export class CollaborationRequestsPageComponent {
+  requests: CollaborationRequestItem[] = [
+    { id: 'CR-001', requesterCompany: 'TransLog', targetTripId: 'T-001', amount: 350, status: 'pending' },
+    { id: 'CR-002', requesterCompany: 'FastMove', targetTripId: 'T-003', amount: 420, status: 'accepted' },
+    { id: 'CR-003', requesterCompany: 'ExpressCargo', targetTripId: 'T-002', amount: 300, status: 'rejected' },
+  ];
+}
+
+
+====== Fichier : ./src/app/services/firestore.ts ======
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class Firestore {
+  
+}
+
+
+====== Fichier : ./src/app/services/chat.service.ts ======
+import { Injectable, inject } from '@angular/core';
+import { Database, ref, push, object, listVal, DatabaseReference, serverTimestamp } from '@angular/fire/database';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+
+// --- STRUCTURE DE DONNÉES DU CHAT ---
+
+/**
+ * Interface pour un message (stocké dans RTDB).
+ */
+export interface ChatMessage {
+  senderId: string;
+  text: string;
+  timestamp: any; // Utiliser 'any' ou firebase.database.ServerValue pour le timestamp
+}
+
+/**
+ * Interface pour une conversation (référence).
+ */
+export interface ChatConversation {
+  id: string; // L'ID de la demande de collaboration (ex: collaborationRequests/{id})
+  lastMessage?: string;
+  lastTimestamp?: any;
+}
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ChatService {
+  private db = inject(Database);
+
+  // 🚨 REMPLACEZ PAR L'UID DE L'UTILISATEUR CONNECTÉ
+  private readonly CURRENT_USER_ID = 'UID_Logged_In_User'; 
+
+  /**
+   * Modélisation RTDB :
+   * /chats/
+   * [CollaborationRequestId] / <--- Nœud principal de la conversation
+   * [MessageId] /
+   * senderId: "UID_1"
+   * text: "Bonjour..."
+   * timestamp: 1678888888888
+   */
+
+
+  /**
+   * Envoie un nouveau message à une conversation spécifique.
+   * @param conversationId L'ID de la demande de collaboration.
+   * @param text Le contenu du message.
+   * @returns Promesse de la fonction push.
+   */
+  sendMessage(conversationId: string, text: string) {
+    const messagesRef = ref(this.db, `chats/${conversationId}`);
+    
+    const message: ChatMessage = {
+      senderId: this.CURRENT_USER_ID,
+      text: text,
+      timestamp: serverTimestamp() // Utilisation du temps du serveur Firebase
+    };
+    
+    return push(messagesRef, message);
+  }
+
+  /**
+   * Écoute les messages d'une conversation en temps réel.
+   * @param conversationId L'ID de la demande de collaboration.
+   * @returns Observable d'un tableau de messages.
+   */
+  getMessages(conversationId: string): Observable<ChatMessage[]> {
+    const messagesRef = ref(this.db, `chats/${conversationId}`);
+    
+    // Utilise listVal pour récupérer la liste des messages. 
+    // L'Observable se met à jour à chaque nouveau message.
+    return listVal<ChatMessage>(messagesRef, { keyField: 'id' })
+      .pipe(
+        // Trie les messages par timestamp (le tri se fait souvent mieux côté client pour listVal)
+        map(messages => messages.sort((a, b) => a.timestamp - b.timestamp))
+      );
+  }
+
+  /**
+   * Retourne une référence à un nœud spécifique (utile pour l'écriture ou la lecture de données uniques).
+   */
+  getConversationRef(conversationId: string): DatabaseReference {
+    return ref(this.db, `chats/${conversationId}`);
+  }
+}
+
+
+====== Fichier : ./src/app/services/firestore.service.ts ======
+import { Injectable, inject } from '@angular/core';
+import { Firestore, collection, collectionData, doc, addDoc, updateDoc, deleteDoc, query, where, Timestamp } from '@angular/fire/firestore';
+import { Observable } from 'rxjs';
+import { Car } from '../interfaces/car.interface';
+import { Trip } from '../interfaces/trip.interface';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class FirestoreService {
+  private firestore = inject(Firestore);
+
+  // --- Opérations CARS ---
+
+  getCars(companyId: string): Observable<Car[]> {
+    const carsCollection = collection(this.firestore, 'cars');
+    const q = query(carsCollection, where('companyId', '==', companyId));
+    return collectionData(q, { idField: 'id' }) as Observable<Car[]>;
+  }
+
+  addCar(car: Omit<Car, 'id'>) {
+    const carsCollection = collection(this.firestore, 'cars');
+    return addDoc(carsCollection, car);
+  }
+
+  updateCar(car: Car) {
+    const carDoc = doc(this.firestore, 'cars', car.id!);
+    const { id, ...data } = car; 
+    return updateDoc(carDoc, data);
+  }
+
+  deleteCar(carId: string) {
+    const carDoc = doc(this.firestore, 'cars', carId);
+    return deleteDoc(carDoc);
+  }
+
+  // --- Opérations TRIPS ---
+  
+  addTrip(trip: Omit<Trip, 'id' | 'createdAt'>) {
+    const tripsCollection = collection(this.firestore, 'trips');
+    const newTrip = { ...trip, createdAt: Timestamp.now() };
+    return addDoc(tripsCollection, newTrip);
+  }
+}
+
+//////////////////////
+// CollaborationRequest
+//////////////////////
+
+export interface CollaborationRequest {
+  id: string;                    // id du document Firestore
+  requesterCompanyId: string;     // société qui demande la collaboration
+  targetCompanyId: string;        // société cible (celle connectée)
+  targetTripId: string;           // id du trajet cible
+  proposedAmount: number;         // montant proposé
+
+  packageDetails: {
+    id: string;                   // id du colis
+    weight: number;               // poids du colis
+    description: string;          // description du colis
+  };
+
+  status: 'pending' | 'accepted' | 'rejected';
+
+  createdAt?: Timestamp;
+  acceptedAt?: Timestamp;
+  rejectedAt?: Timestamp;
+}
+
+
+====== Fichier : ./src/app/services/chat.ts ======
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class Chat {
+  
+}
+
+
+====== Fichier : ./src/app/interfaces/trip.interface.ts ======
+// src/app/interfaces/trip.interface.ts
+import { Timestamp } from '@angular/fire/firestore';
+
+export interface TripStep {
+  city: string;
+  estimatedTime: string; // Ex: '15:30'
+}
+
+export interface Trip {
+  id?: string;
+  carId: string;
+  companyId: string;
+  driverId: string;
+  departureCity: string;
+  arrivalCity: string;
+  estimatedDepartureTime: Timestamp;
+  estimatedArrivalTime: Timestamp;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  steps: TripStep[];
+  createdAt: Timestamp;
+}
+
+
+====== Fichier : ./src/app/interfaces/car.interface.ts ======
+// src/app/interfaces/car.interface.ts
+export interface Car {
+  id?: string;
+  companyId: string;
+  licensePlate: string;
+  make: string;
+  model: string;
+  year: number;
+  assignedDriverId?: string;
+  isOperational: boolean;
+}
+
+
+====== Fichier : ./src/main.ts ======
+import { bootstrapApplication } from '@angular/platform-browser';
+import { appConfig } from './app/app.config';
+import { App } from './app/app';
+
+bootstrapApplication(App, appConfig)
+  .catch((err) => console.error(err));
+
+
+====== Fichier : ./src/styles.css ======
+@import "leaflet/dist/leaflet.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* You can add global styles to this file, and also import other style files */
+
+
+====== Fichier : ./src/environments/environment.ts ======
+// src/environments/environment.ts
+export const environment = {
+  production: false,
+  firebaseConfig: {
+    // 🚨 REMPLACEZ CES PLACEHOLDERS PAR VOS CLÉS RÉELLES 🚨
+    apiKey: "VOTRE_API_KEY_ICI",
+    authDomain: "VOTRE_AUTH_DOMAIN_ICI",
+    projectId: "VOTRE_PROJECT_ID_ICI",
+    storageBucket: "VOTRE_STORAGE_BUCKET_ICI",
+    messagingSenderId: "VOTRE_MESSAGING_SENDER_ID_ICI",
+    appId: "VOTRE_APP_ID_ICI",
+  }
+};
+
+

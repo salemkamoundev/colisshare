@@ -1,0 +1,49 @@
+🔍 CHECKLIST FIREBASE:
+
+1. ✅ Vérifie src/environments/environment.ts:
+   - firebaseConfig doit contenir:
+     * apiKey
+     * authDomain
+     * projectId
+     * storageBucket
+     * messagingSenderId
+     * appId
+
+2. ✅ Vérifie les règles Firestore (Firebase Console):
+   
+   Option A - MODE TEST (temporaire):
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /{document=**} {
+         allow read, write: if true;
+       }
+     }
+   }
+
+   Option B - AVEC SÉCURITÉ:
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /cars/{carId} {
+         allow read, write: if true;
+       }
+       match /trips/{tripId} {
+         allow read, write: if true;
+       }
+       match /collaborationRequests/{requestId} {
+         allow read, write: if true;
+       }
+     }
+   }
+
+3. ✅ Ouvre la CONSOLE DU NAVIGATEUR (F12):
+   - Onglet "Console"
+   - Cherche les logs qui commencent par 🔍 📋 📦
+   - Cherche les erreurs rouges
+
+4. ✅ Teste la connexion Firebase:
+   - Va dans Firebase Console
+   - Clique sur ton projet
+   - Va dans "Firestore Database"
+   - Essaie d'ajouter un document manuellement

@@ -1,0 +1,204 @@
+<div class="min-h-[calc(100vh-4rem)] w-full px-4 py-6 flex flex-col gap-6">
+
+  <!-- Bandeau + slider -->
+  <section class="bg-white rounded-2xl shadow border border-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-6 items-center">
+    <div class="flex-1 space-y-3">
+      <p class="inline-flex items-center gap-2 text-[11px] font-medium text-blue-700 bg-blue-50 rounded-full px-3 py-1">
+        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        {{ slides[activeIndex].tag }}
+      </p>
+
+      <h1 class="text-xl md:text-2xl font-semibold text-gray-900">
+        {{ slides[activeIndex].title }}
+      </h1>
+
+      <p class="text-sm text-gray-600">
+        {{ slides[activeIndex].subtitle }}
+      </p>
+
+      <p class="text-xs md:text-sm text-gray-500 leading-relaxed">
+        {{ slides[activeIndex].description }}
+      </p>
+
+      <div class="flex flex-wrap items-center gap-2 pt-2">
+        <button
+          type="button"
+          class="px-3 py-2 rounded-full bg-blue-600 text-white text-xs hover:bg-blue-700 transition"
+          routerLink="/trajets/saisie">
+          Commencer un trajet
+        </button>
+        <button
+          type="button"
+          class="px-3 py-2 rounded-full border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 transition"
+          routerLink="/voitures">
+          Voir mes véhicules
+        </button>
+      </div>
+    </div>
+
+    <div class="w-full md:w-80 lg:w-96">
+      <div class="relative h-52 md:h-60 rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-500 text-white overflow-hidden flex items-end">
+        <div class="absolute inset-0 opacity-10 pointer-events-none">
+          <div class="w-40 h-40 rounded-full border border-white/40 absolute -top-8 -left-8"></div>
+          <div class="w-52 h-52 rounded-full border border-white/30 absolute -bottom-12 right-4"></div>
+        </div>
+
+        <div class="p-4 md:p-5 z-10 w-full">
+          <p class="text-[11px] uppercase tracking-wide text-blue-100 mb-1">
+            Tutoriel rapide
+          </p>
+          <p class="text-sm font-semibold mb-3">
+            1. Configurez vos véhicules<br>
+            2. Déclarez vos trajets<br>
+            3. Gérez les collabs<br>
+            4. Discutez dans le chat
+          </p>
+
+          <div class="flex items-center justify-between text-[10px]">
+            <div class="space-y-1">
+              <p class="uppercase tracking-wide text-blue-100">
+                Progression
+              </p>
+              <div class="w-28 h-1.5 rounded-full bg-white/30 overflow-hidden">
+                <div class="h-full bg-white/90" style="width: 65%;"></div>
+              </div>
+              <p class="text-blue-50">Vous êtes prêt à démarrer 🚚</p>
+            </div>
+
+            <div class="text-right">
+              <p class="text-blue-100 mb-1">
+                Astuce
+              </p>
+              <p class="text-[11px] text-blue-50">
+                Utilisez ce dashboard pour accéder à toutes les sections clés.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contrôles du slider -->
+      <div class="mt-3 flex items-center justify-between text-[11px] text-gray-500">
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="prevSlide()"
+            class="px-2 py-1 rounded-full border border-gray-300 hover:bg-gray-50">
+            ◀
+          </button>
+          <button
+            type="button"
+            (click)="nextSlide()"
+            class="px-2 py-1 rounded-full border border-gray-300 hover:bg-gray-50">
+            ▶
+          </button>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button
+            *ngFor="let s of slides; let i = index"
+            type="button"
+            (click)="goToSlide(i)"
+            class="w-2.5 h-2.5 rounded-full border"
+            [ngClass]="i === activeIndex ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 border-gray-300'">
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENUS DASHBOARD : accès rapide à toutes les pages -->
+  <section class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+    <!-- Accueil / Vue d'ensemble -->
+    <a
+      routerLink="/"
+      [routerLinkActive]="'ring-2 ring-blue-400 ring-offset-2'"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-blue-600">Dashboard</p>
+      <h2 class="text-sm font-semibold text-gray-800">Vue d’ensemble</h2>
+      <p class="text-xs text-gray-500">
+        Accédez rapidement au tutoriel, à l’état global de votre flotte et à toutes les fonctionnalités.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Rester sur la page d’accueil
+      </span>
+    </a>
+
+    <!-- Gestion des voitures -->
+    <a
+      routerLink="/voitures"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Flotte</p>
+      <h2 class="text-sm font-semibold text-gray-800">Gestion des voitures</h2>
+      <p class="text-xs text-gray-500">
+        Ajoutez / modifiez vos véhicules, visualisez la capacité et l’activité de votre flotte.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Ouvrir la gestion des voitures →
+      </span>
+    </a>
+
+    <!-- Saisie de trajet -->
+    <a
+      routerLink="/trajets/saisie"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Opérations</p>
+      <h2 class="text-sm font-semibold text-gray-800">Saisie de trajet</h2>
+      <p class="text-xs text-gray-500">
+        Déclarez un nouveau trajet, choisissez un véhicule et indiquez la capacité disponible.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Créer un trajet →
+      </span>
+    </a>
+
+    <!-- Historique des trajets -->
+    <a
+      routerLink="/trajets/historique"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Suivi</p>
+      <h2 class="text-sm font-semibold text-gray-800">Historique des trajets</h2>
+      <p class="text-xs text-gray-500">
+        Consultez vos trajets passés, en cours et planifiés. Filtrez par date ou statut.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Voir l’historique →
+      </span>
+    </a>
+
+    <!-- Demandes de collab -->
+    <a
+      routerLink="/collaborations/demandes"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Collaboration</p>
+      <h2 class="text-sm font-semibold text-gray-800">Demandes de collab</h2>
+      <p class="text-xs text-gray-500">
+        Gérez les demandes de collaboration entrantes sur vos trajets et acceptez les plus pertinentes.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Gérer les collabs →
+      </span>
+    </a>
+
+    <!-- Chat -->
+    <a
+      routerLink="/chat"
+      routerLinkActive="ring-2 ring-blue-400 ring-offset-2"
+      class="group bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition">
+      <p class="text-[11px] font-medium text-gray-500">Communication</p>
+      <h2 class="text-sm font-semibold text-gray-800">Chat</h2>
+      <p class="text-xs text-gray-500">
+        Discutez en temps réel avec vos partenaires pour affiner les détails d’un trajet ou d’un colis.
+      </p>
+      <span class="mt-1 text-[11px] text-blue-600 group-hover:underline">
+        Ouvrir le chat →
+      </span>
+    </a>
+  </section>
+</div>

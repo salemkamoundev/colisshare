@@ -1,0 +1,132 @@
+<div class="space-y-6">
+  
+  <!-- En-tête -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Gestion du Parc Automobile</h1>
+      <p class="text-sm text-gray-600 mt-1">Gérez votre flotte de véhicules</p>
+    </div>
+    <button
+      *ngIf="!showForm"
+      (click)="toggleForm()"
+      class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all duration-200 flex items-center gap-2"
+    >
+      <span class="text-xl">➕</span>
+      Ajouter une voiture
+    </button>
+  </div>
+
+  <!-- Message d'erreur -->
+  <div *ngIf="loadError" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+    <div class="flex items-start gap-3">
+      <span class="text-2xl">❌</span>
+      <div>
+        <h3 class="font-bold text-red-900">Erreur de chargement</h3>
+        <p class="text-red-800 text-sm mt-1">{{ errorMessage }}</p>
+        <button
+          (click)="loadCars()"
+          class="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+        >
+          🔄 Réessayer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulaire (identique à avant) -->
+  <div *ngIf="showForm" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-bold text-gray-900">
+        {{ isEditing ? '✏️ Modifier' : '➕ Ajouter' }}
+      </h3>
+      <button (click)="cancelEdit()" class="text-gray-500 hover:text-gray-700">✖️</button>
+    </div>
+
+    <form [formGroup]="carForm" (ngSubmit)="onSubmit()" class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Plaque *</label>
+        <input type="text" formControlName="licensePlate" placeholder="123-TN-456"
+          class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Marque *</label>
+          <input type="text" formControlName="make" class="w-full px-4 py-2 border rounded-lg" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Modèle *</label>
+          <input type="text" formControlName="model" class="w-full px-4 py-2 border rounded-lg" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Année *</label>
+        <input type="number" formControlName="year" class="w-full px-4 py-2 border rounded-lg" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Chauffeur (optionnel)</label>
+        <input type="text" formControlName="assignedDriverId" class="w-full px-4 py-2 border rounded-lg" />
+      </div>
+
+      <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+        <input type="checkbox" formControlName="isOperational" class="w-5 h-5" />
+        <label class="text-sm font-medium">✅ Véhicule opérationnel</label>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" [disabled]="carForm.invalid || loading"
+          class="flex-1 px-6 py-3 rounded-lg font-semibold text-white"
+          [class]="carForm.invalid || loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'">
+          {{ loading ? '⏳ Chargement...' : (isEditing ? '💾 Sauvegarder' : '➕ Ajouter') }}
+        </button>
+        <button type="button" (click)="cancelEdit()"
+          class="px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300">❌ Annuler</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Liste des voitures -->
+  <div>
+    <h3 class="text-xl font-bold text-gray-900 mb-4">📋 Liste des Voitures</h3>
+    
+    <div *ngIf="cars$ | async as cars; else loadingTemplate">
+      <div *ngIf="cars.length === 0" class="bg-white p-8 rounded-xl shadow-md text-center">
+        <p class="text-gray-500 text-lg">🚗 Aucune voiture enregistrée</p>
+      </div>
+
+      <div *ngFor="let car of cars"
+        class="bg-white p-5 rounded-xl shadow-md hover:shadow-xl transition-all border-l-4 border-blue-500 mb-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h4 class="text-lg font-bold">{{ car.make }} {{ car.model }}</h4>
+            <p class="text-sm text-gray-600">🔖 {{ car.licensePlate }}</p>
+            <p class="text-sm text-gray-600">📅 {{ car.year }}</p>
+            <span class="inline-block mt-2 px-3 py-1 text-xs rounded-full"
+              [class]="car.isOperational ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+              {{ car.isOperational ? '✅ Opérationnelle' : '🔧 Maintenance' }}
+            </span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <button (click)="onSelectCar(car)"
+              class="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100">
+              ✏️ Modifier
+            </button>
+            <button (click)="onDeleteCar(car.id!, car.make + ' ' + car.model)"
+              class="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100">
+              🗑️ Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #loadingTemplate>
+      <div class="bg-white p-8 rounded-xl shadow-md text-center">
+        <p class="text-gray-500">⏳ Chargement des voitures...</p>
+        <p class="text-gray-400 text-sm mt-2">Si cela prend trop de temps, vérifie la console (F12)</p>
+      </div>
+    </ng-template>
+  </div>
+</div>

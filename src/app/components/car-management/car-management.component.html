@@ -1,0 +1,112 @@
+<div class="p-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">🚗 Gestion du Parc Automobile</h2>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-xl">
+            <h3 class="text-xl font-semibold mb-4 text-blue-600">{{ isEditing ? 'Modifier la Voiture' : 'Ajouter une Nouvelle Voiture' }}</h3>
+            
+            <form [formGroup]="carForm" (ngSubmit)="onSubmit()" class="space-y-4">
+                
+                <div>
+                    <label for="licensePlate" class="block text-sm font-medium text-gray-700">Plaque d'Immatriculation</label>
+                    <input id="licensePlate" type="text" formControlName="licensePlate" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Ex: AA-123-BB">
+                    <div *ngIf="carForm.get('licensePlate')?.invalid && carForm.get('licensePlate')?.touched" class="text-red-500 text-xs mt-1">
+                        La plaque est obligatoire.
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="make" class="block text-sm font-medium text-gray-700">Marque</label>
+                        <input id="make" type="text" formControlName="make" 
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    </div>
+                    <div>
+                        <label for="model" class="block text-sm font-medium text-gray-700">Modèle</label>
+                        <input id="model" type="text" formControlName="model" 
+                               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="year" class="block text-sm font-medium text-gray-700">Année</label>
+                    <input id="year" type="number" formControlName="year" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+
+                <div>
+                    <label for="assignedDriverId" class="block text-sm font-medium text-gray-700">ID Chauffeur Assigné (Optionnel)</label>
+                    <input id="assignedDriverId" type="text" formControlName="assignedDriverId" 
+                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+
+                <div class="flex items-center">
+                    <input id="isOperational" type="checkbox" formControlName="isOperational" 
+                           class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                    <label for="isOperational" class="ml-2 block text-sm font-medium text-gray-700">
+                        Opérationnelle
+                    </label>
+                </div>
+
+                <div class="flex space-x-3 pt-4">
+                    <button type="submit" [disabled]="carForm.invalid"
+                            class="flex-1 px-4 py-2 text-white font-semibold rounded-md shadow transition duration-150"
+                            [ngClass]="carForm.invalid ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'">
+                        {{ isEditing ? 'Sauvegarder les Modifications' : 'Ajouter la Voiture' }}
+                    </button>
+
+                    <button type="button" *ngIf="isEditing" (click)="initForm()"
+                            class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md shadow hover:bg-gray-300 transition duration-150">
+                        Annuler / Nouveau
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="lg:col-span-2">
+            <h3 class="text-xl font-semibold mb-4 text-gray-800">Liste des Voitures</h3>
+            
+            <div *ngIf="(cars$ | async) as cars; else loading" class="space-y-3">
+                
+                <div *ngIf="cars.length === 0" class="p-4 text-center text-gray-500 bg-white rounded-lg shadow-inner">
+                    Aucune voiture enregistrée.
+                </div>
+
+                <div *ngFor="let car of cars" 
+                     class="bg-white p-4 rounded-lg shadow flex items-center justify-between transition duration-150 hover:shadow-lg"
+                     [ngClass]="{'border-l-4 border-blue-500': selectedCarId === car.id, 'border-l-4 border-gray-200': selectedCarId !== car.id}">
+                    
+                    <div>
+                        <p class="text-lg font-bold text-gray-900">{{ car.make }} {{ car.model }}</p>
+                        <p class="text-sm text-gray-600">Plaque: {{ car.licensePlate }}</p>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                              [ngClass]="car.isOperational ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                            {{ car.isOperational ? 'Opérationnelle' : 'Maintenance' }}
+                        </span>
+                    </div>
+
+                    <div class="space-x-2">
+                        <button (click)="onSelectCar(car)" 
+                                class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition duration-150"
+                                title="Modifier">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button (click)="onDeleteCar(car.id!)" 
+                                class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 transition duration-150"
+                                title="Supprimer">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <ng-template #loading>
+                <div class="text-center p-4 text-gray-500">Chargement des voitures...</div>
+            </ng-template>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,83 @@
+<div class="min-h-screen bg-gray-100 flex flex-col">
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <!-- Logo et titre -->
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+          T
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Transport Collab</p>
+          <p class="text-[11px] text-gray-500">Dashboard</p>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1">
+        <ul class="flex flex-wrap justify-end gap-2 text-xs">
+          <li>
+            <a
+              routerLink="/"
+              [routerLinkActive]="'bg-blue-50 text-blue-700'"
+              [routerLinkActiveOptions]="{ exact: true }"
+              class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700"
+            >
+              Accueil
+            </a>
+          </li>
+          <li>
+            <a
+              routerLink="/voitures"
+              [routerLinkActive]="'bg-blue-50 text-blue-700'"
+              class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700"
+            >
+              Gestion des voitures
+            </a>
+          </li>
+          <li>
+            <a
+              routerLink="/trajets/saisie"
+              [routerLinkActive]="'bg-blue-50 text-blue-700'"
+              class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700"
+            >
+              Saisie de trajet
+            </a>
+          </li>
+          <li>
+            <a
+              routerLink="/trajets/historique"
+              [routerLinkActive]="'bg-blue-50 text-blue-700'"
+              class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700"
+            >
+              Historique des trajets
+            </a>
+          </li>
+          <li>
+            <a
+              routerLink="/collaborations/demandes"
+              [routerLinkActive]="'bg-blue-50 text-blue-700'"
+              class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700"
+            >
+              Demandes de collab
+            </a>
+          </li>
+          <li>
+            <a
+              routerLink="/chat"
+              [routerLinkActive]="'bg-blue-50 text-blue-700'"
+              class="inline-flex items-center px-3 py-2 rounded-lg border border-transparent hover:bg-gray-50 text-gray-700"
+            >
+              Chat
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Contenu principal -->
+  <main class="flex-1 max-w-6xl mx-auto w-full">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,0 +1,62 @@
+<div class="flex h-screen bg-gray-100">
+
+    <aside class="w-64 flex-shrink-0 bg-gray-800 text-white flex flex-col justify-between">
+        
+        <div class="p-4">
+            <h1 class="text-2xl font-bold border-b border-gray-700 pb-3">
+                <span class="text-blue-400">Colis</span>Share
+            </h1>
+            <div class="mt-4 space-y-2 text-sm text-gray-400">
+                <p><i class="fas fa-truck mr-2"></i> Voitures Opé: <span class="font-semibold text-blue-300">XX</span></p>
+                <p><i class="fas fa-user-friends mr-2"></i> Chauffeurs: <span class="font-semibold text-blue-300">YY</span></p>
+            </div>
+        </div>
+        
+        <nav class="flex-grow p-4 space-y-2">
+            <a routerLink="/dashboard/cars" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-car text-blue-400 w-6"></i>
+                <span class="ml-3">Gestion des Voitures</span>
+            </a>
+            <a routerLink="/dashboard/trips" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-road text-blue-400 w-6"></i>
+                <span class="ml-3">Saisie de Trajet</span>
+            </a>
+            <a routerLink="/dashboard/history" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-history text-blue-400 w-6"></i>
+                <span class="ml-3">Historique des Trajets</span>
+            </a>
+            <a routerLink="/dashboard/collaborations" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-handshake text-blue-400 w-6"></i>
+                <span class="ml-3">Demandes de Collab</span>
+            </a>
+            <a routerLink="/dashboard/chat" routerLinkActive="bg-gray-700/50" class="flex items-center p-3 rounded-lg transition duration-200 hover:bg-gray-700">
+                <i class="fas fa-comments text-blue-400 w-6"></i>
+                <span class="ml-3">Chat</span>
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-gray-700">
+            <button class="w-full flex items-center p-3 rounded-lg text-red-400 hover:bg-gray-700 transition duration-200">
+                <i class="fas fa-sign-out-alt w-6"></i>
+                <span class="ml-3">Déconnexion</span>
+            </button>
+        </div>
+        
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        
+        <header class="flex items-center justify-between p-4 bg-white shadow-md border-b">
+            <h2 class="text-xl font-semibold text-gray-800">Application ColisShare</h2>
+            <div class="flex items-center space-x-4">
+                <i class="far fa-bell text-gray-600 hover:text-blue-500 cursor-pointer"></i>
+                <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm">PR</div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-6">
+            <router-outlet></router-outlet>
+        </main>
+        
+    </div>
+</div>
