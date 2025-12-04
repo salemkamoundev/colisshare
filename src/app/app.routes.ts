@@ -5,45 +5,22 @@ import { TripFormPageComponent } from './pages/trip-form/trip-form-page.componen
 import { TripsHistoryPageComponent } from './pages/trips-history/trips-history-page.component';
 import { CarsManagementPageComponent } from './pages/cars-management/cars-management-page.component';
 import { ChatPageComponent } from './pages/chat-page/chat-page.component';
+import { UsersPageComponent } from './pages/users/users-page.component';
+import { UserCalendarPageComponent } from './pages/user-calendar/user-calendar-page.component'; // Nouvelle page
 import { authGuard } from './auth.guard';
 
 export const routes: Routes = [
-  // Page publique (Login/Signup)
-  { 
-    path: '', 
-    component: HomePageComponent 
-  },
+  { path: '', component: HomePageComponent },
   
-  // Pages protégées (nécessitent AuthGuard)
-  { 
-    path: 'collaborations/demandes', 
-    component: CollaborationRequestsPageComponent, 
-    canActivate: [authGuard] 
-  },
-  { 
-    path: 'trajets/saisie', 
-    component: TripFormPageComponent, 
-    canActivate: [authGuard] 
-  },
-  { 
-    path: 'trajets/historique', 
-    component: TripsHistoryPageComponent, 
-    canActivate: [authGuard] 
-  },
-  { 
-    path: 'voitures', 
-    component: CarsManagementPageComponent, 
-    canActivate: [authGuard] 
-  },
-  { 
-    path: 'chat', 
-    component: ChatPageComponent, 
-    canActivate: [authGuard] 
-  },
+  { path: 'collaborations/demandes', component: CollaborationRequestsPageComponent, canActivate: [authGuard] },
+  { path: 'trajets/saisie', component: TripFormPageComponent, canActivate: [authGuard] },
+  { path: 'trajets/historique', component: TripsHistoryPageComponent, canActivate: [authGuard] },
+  { path: 'voitures', component: CarsManagementPageComponent, canActivate: [authGuard] },
+  { path: 'chat', component: ChatPageComponent, canActivate: [authGuard] },
+  
+  // Routes Collaborations
+  { path: 'utilisateurs', component: UsersPageComponent, canActivate: [authGuard] },
+  { path: 'user/:uid/calendar', component: UserCalendarPageComponent, canActivate: [authGuard] }, // Nouvelle Route
 
-  // Redirection par défaut (si URL inconnue)
-  { 
-    path: '**', 
-    redirectTo: '' 
-  }
+  { path: '**', redirectTo: '' }
 ];

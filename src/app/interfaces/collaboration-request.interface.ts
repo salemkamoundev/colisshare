@@ -1,20 +1,35 @@
 import { Timestamp } from '@angular/fire/firestore';
+import { AppUser } from './user.interface';
 
 export interface PackageDetails {
-  id: string;
-  weight: number;
   description: string;
+  clientName: string;
+  clientAddress: string;
+  weight?: number;
+  date?: string;
 }
 
+export interface CollaborationResponse {
+  price: number;
+  note: string;
+  respondedAt: Timestamp;
+}
+
+// Ajout de 'completed'
+export type CollabStatus = 'pending' | 'price_proposed' | 'confirmed' | 'rejected' | 'completed';
+
 export interface CollaborationRequest {
-  id: string;
-  requesterCompanyId: string;
-  targetCompanyId: string;
-  targetTripId: string;
+  id?: string;
+  fromUserId: string;
+  toUserId: string;
+  
   packageDetails: PackageDetails;
-  proposedAmount: number;
-  status: 'pending' | 'accepted' | 'rejected';
-  createdAt: Timestamp;
-  acceptedAt?: Timestamp;
-  rejectedAt?: Timestamp;
+  response?: CollaborationResponse;
+  
+  status: CollabStatus;
+  createdAt: Timestamp | any;
+  completedAt?: Timestamp | any; // Nouveau champ date de fin
+  
+  fromUser?: AppUser;
+  toUser?: AppUser;
 }

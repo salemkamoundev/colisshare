@@ -2,15 +2,14 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { CollaborationService } from '../../services/collaboration.service';
-import { HeaderComponent } from '../../components/header/header.component';
+// Header supprimé des imports car géré globalement
 import { switchMap, of } from 'rxjs';
 
 @Component({
   selector: 'app-shared-trips-page',
   standalone: true,
-  imports: [CommonModule, HeaderComponent],
+  imports: [CommonModule],
   template: `
-    <app-header></app-header>
     <div class="p-6">
       <h1 class="text-2xl font-bold mb-4">Trajets Partagés</h1>
       <ng-container *ngIf="sharedTrips$ | async as trips">
@@ -18,7 +17,7 @@ import { switchMap, of } from 'rxjs';
           Aucun trajet partagé pour le moment.
         </div>
         <div *ngFor="let trip of trips" class="bg-white p-4 rounded-lg shadow mb-3">
-          {{ trip | json }}
+           {{ trip | json }}
         </div>
       </ng-container>
     </div>

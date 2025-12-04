@@ -1,17 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, collectionData } from '@angular/fire/firestore';
-import { Observable, combineLatest, map, of, tap } from 'rxjs';
+import { Firestore, collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, collectionData, Timestamp } from '@angular/fire/firestore';
+import { Observable, combineLatest, map, of } from 'rxjs';
 import { AppUser } from '../interfaces/user.interface';
-
-export interface CollaborationRequest {
-  id?: string;
-  fromUserId: string;
-  toUserId: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  createdAt: any;
-  fromUser?: AppUser;
-  toUser?: AppUser;
-}
+import { CollaborationRequest, PackageDetails } from '../interfaces/collaboration-request.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -20,96 +11,94 @@ export class CollaborationService {
   private firestore = inject(Firestore);
 
   // --- ENVOI ---
-  async sendRequest(currentUserId: string, targetUserId: string) {
-    console.log(`Envoi demande de ${currentUserId} vers ${targetUserId}`);
+  async sendRequest(currentUserId: string, targetUserId: string, details: PackageDetails) {
     const requestsRef = collection(this.firestore, 'collaboration_requests');
-    
-    const q = query(requestsRef, 
-      where('fromUserId', '==', currentUserId), 
-      where('toUserId', '==', targetUserId)
-    );
+    const q = query(requestsRef, where('fromUserId', '==', currentUserId), where('toUserId', '==', targetUserId), where('status', '==', 'pending'));
     const snapshot = await getDocs(q);
-    
-    if (!snapshot.empty) {
-      console.warn('Demande déjà existante');
-      throw new Error('Une demande existe déjà.');
-    }
+    if (!snapshot.empty) throw new Error('Demande déjà en attente.');
 
     return addDoc(requestsRef, {
       fromUserId: currentUserId,
       toUserId: targetUserId,
+      packageDetails: details,
       status: 'pending',
-      createdAt: new Date()
+      createdAt: Timestamp.now()
     });
   }
 
-  // --- LECTURE (Pending) ---
-  
-  // Méthode principale avec logs
-  getPendingRequestsForUser(userId: string): Observable<CollaborationRequest[]> {
-    console.log(`🔍 Récupération demandes en attente pour: ${userId}`);
-    const requestsRef = collection(this.firestore, 'collaboration_requests');
-    const q = query(requestsRef, where('toUserId', '==', userId), where('status', '==', 'pending'));
-    
-    return (collectionData(q, { idField: 'id' }) as Observable<CollaborationRequest[]>).pipe(
-      tap(results => console.log(`   👉 Résultats trouvés: ${results.length}`, results))
-    );
-  }
+  // --- CHANGEMENTS D'ETAT ---
 
-  // ALIAS pour compatibilité (fixe l'erreur TS2339)
-  getPendingRequests(userId: string): Observable<CollaborationRequest[]> {
-    return this.getPendingRequestsForUser(userId);
-  }
-
-  // --- LECTURE (Accepted) ---
-  getAcceptedCollaborations(userId: string): Observable<CollaborationRequest[]> {
-    const requestsRef = collection(this.firestore, 'collaboration_requests');
-    
-    const q1 = query(requestsRef, where('toUserId', '==', userId), where('status', '==', 'accepted'));
-    const q2 = query(requestsRef, where('fromUserId', '==', userId), where('status', '==', 'accepted'));
-    
-    const received$ = collectionData(q1, { idField: 'id' }) as Observable<CollaborationRequest[]>;
-    const sent$ = collectionData(q2, { idField: 'id' }) as Observable<CollaborationRequest[]>;
-
-    return combineLatest([received$, sent$]).pipe(
-      map(([r, s]) => [...r, ...s])
-    );
-  }
-
-  // --- ACTIONS (Accept/Decline) ---
-
-  async updateRequestStatus(requestId: string, status: 'accepted' | 'rejected') {
-    console.log(`📝 Mise à jour demande ${requestId} -> ${status}`);
+  async proposePrice(requestId: string, price: number, note: string) {
     const docRef = doc(this.firestore, 'collaboration_requests', requestId);
-    return updateDoc(docRef, { status });
+    return updateDoc(docRef, { status: 'price_proposed', response: { price, note, respondedAt: Timestamp.now() } });
   }
 
-  // ALIAS pour compatibilité (fixe l'erreur TS2339)
-  async acceptRequest(requestId: string) {
-    return this.updateRequestStatus(requestId, 'accepted');
+  async confirmCollaboration(requestId: string) {
+    const docRef = doc(this.firestore, 'collaboration_requests', requestId);
+    return updateDoc(docRef, { status: 'confirmed' });
   }
 
-  // ALIAS pour compatibilité (fixe l'erreur TS2339)
+  // NOUVELLE METHODE : TERMINER LA MISSION
+  async markAsCompleted(requestId: string) {
+    const docRef = doc(this.firestore, 'collaboration_requests', requestId);
+    return updateDoc(docRef, { 
+      status: 'completed',
+      completedAt: Timestamp.now()
+    });
+  }
+
+  async acceptRequest(requestId: string, price: number, note: string) {
+    return this.proposePrice(requestId, price, note);
+  }
+
   async declineRequest(requestId: string) {
-    return this.updateRequestStatus(requestId, 'rejected');
+    const docRef = doc(this.firestore, 'collaboration_requests', requestId);
+    return updateDoc(docRef, { status: 'rejected' });
   }
 
-  // --- SUPPRESSION ---
   async deleteCollaboration(requestId: string) {
-    console.log(`🗑️ Suppression collaboration ${requestId}`);
     const docRef = doc(this.firestore, 'collaboration_requests', requestId);
     return deleteDoc(docRef);
   }
 
-  // --- UTILISATEURS ---
+  // --- LECTURE ---
+
+  getIncomingRequests(userId: string): Observable<CollaborationRequest[]> {
+    const requestsRef = collection(this.firestore, 'collaboration_requests');
+    const q = query(requestsRef, where('toUserId', '==', userId));
+    return collectionData(q, { idField: 'id' }) as Observable<CollaborationRequest[]>;
+  }
+
+  getOutgoingRequests(userId: string): Observable<CollaborationRequest[]> {
+    const requestsRef = collection(this.firestore, 'collaboration_requests');
+    const q = query(requestsRef, where('fromUserId', '==', userId));
+    return collectionData(q, { idField: 'id' }) as Observable<CollaborationRequest[]>;
+  }
+
+  getPendingRequests(userId: string) { return this.getIncomingRequests(userId); }
+
+  // Modifié pour inclure 'confirmed' ET 'completed' pour le chat
+  getAcceptedCollaborations(userId: string): Observable<CollaborationRequest[]> {
+    const requestsRef = collection(this.firestore, 'collaboration_requests');
+    const q1 = query(requestsRef, where('toUserId', '==', userId));
+    const q2 = query(requestsRef, where('fromUserId', '==', userId));
+    
+    const r$ = collectionData(q1, { idField: 'id' }) as Observable<CollaborationRequest[]>;
+    const s$ = collectionData(q2, { idField: 'id' }) as Observable<CollaborationRequest[]>;
+    
+    return combineLatest([r$, s$]).pipe(
+      map(([a, b]) => {
+        // On retourne tout ce qui est actif ou fini (pour l'historique global si besoin)
+        const all = [...a, ...b];
+        return all.filter(r => r.status === 'confirmed' || r.status === 'completed' || r.status === 'price_proposed');
+      })
+    );
+  }
+
   getAllUsers(): Observable<AppUser[]> {
     const usersRef = collection(this.firestore, 'users');
     return collectionData(usersRef, { idField: 'uid' }) as Observable<AppUser[]>;
   }
 
-  // --- SHARED TRIPS (Fixe l'erreur TS2339) ---
-  getSharedTripsForUser(userId: string): Observable<any[]> {
-    // Placeholder pour éviter l'erreur de compilation
-    return of([]); 
-  }
+  getSharedTripsForUser(uid: string) { return of([]); }
 }

@@ -1,0 +1,46 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+  <div class="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-6">
+    
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-800">📅 Calendrier des Trajets</h2>
+      <a routerLink="/collaborations/demandes" class="text-blue-600 hover:underline">Retour liste</a>
+    </div>
+
+    <p class="text-sm text-gray-500 mb-4">
+      Cliquez sur un trajet (bleu) ou sur une date vide pour proposer une expédition à ce transporteur.
+    </p>
+
+    <full-calendar [options]="calendarOptions"></full-calendar>
+
+  </div>
+</div>
+
+<div *ngIf="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 animate-scale-in">
+    <h3 class="text-xl font-bold mb-2 text-gray-800">📦 Nouvelle Demande</h3>
+    <p class="text-sm text-blue-600 font-medium mb-4">Pour le : {{ selectedDate }}</p>
+
+    <form (ngSubmit)="sendRequest()" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Description du colis</label>
+        <input type="text" [(ngModel)]="packageForm.description" name="desc" class="w-full border border-gray-300 p-2 rounded" required placeholder="Ex: Documents importants...">
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nom Client</label>
+          <input type="text" [(ngModel)]="packageForm.clientName" name="client" class="w-full border border-gray-300 p-2 rounded" placeholder="Nom du destinataire">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Adresse</label>
+          <input type="text" [(ngModel)]="packageForm.clientAddress" name="address" class="w-full border border-gray-300 p-2 rounded" placeholder="Ville/Quartier">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-4">
+        <button type="button" (click)="closeModal()" class="px-4 py-2 bg-gray-100 rounded text-gray-700">Annuler</button>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">Envoyer Demande</button>
+      </div>
+    </form>
+  </div>
+</div>
