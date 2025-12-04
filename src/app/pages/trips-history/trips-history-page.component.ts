@@ -8,34 +8,35 @@ import { Observable, combineLatest, of } from 'rxjs';
 import { map, catchError, startWith, shareReplay } from 'rxjs/operators';
 import { Timestamp } from '@angular/fire/firestore';
 
-// Correction de l'interface pour inclure 'destinations'
 interface TripWithCar extends Trip {
   car?: Car;
   displayDeparture: string;
   displayArrival: string;
-  destinations?: string[]; // Ajout explicite pour TypeScript
+  destinations?: string[];
 }
 
 @Component({
   selector: 'app-trips-history-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePipe], 
+  imports: [CommonModule, FormsModule, ReactiveFormsModule], 
+  providers: [DatePipe], // On le met ici pour l'injecter proprement
   templateUrl: './trips-history-page.component.html'
 })
 export class TripsHistoryPageComponent implements OnInit {
   private auth = inject(AuthService);
   private firestoreService = inject(FirestoreService);
   private fb = inject(FormBuilder);
+  private datePipe = inject(DatePipe);
 
   // Observables
   trips$!: Observable<TripWithCar[]>;
-  availableCars$!: Observable<Car[]>; // Correction: Variable rétablie pour le template
+  availableCars$!: Observable<Car[]>;
   
   // Données locales
   allTrips: TripWithCar[] = [];
   filteredTrips: TripWithCar[] = [];
   
-  // Filtres & Tri
+  // Filtres
   searchText = ''; 
   filterStatus = 'all';
   sortField = 'estimatedDepartureTime';
@@ -48,12 +49,12 @@ export class TripsHistoryPageComponent implements OnInit {
   // UI State
   loading = false;
   showCreateModal = false;
+  showEditModal = false;
+  
   createForm: FormGroup;
+  editForm: FormGroup;
   
-  // Edition
   editingTrip: TripWithCar | null = null;
-  isModalOpen = false;
-  
   COMPANY_ID = '';
 
   statusLabels: any = {
@@ -71,6 +72,7 @@ export class TripsHistoryPageComponent implements OnInit {
   };
 
   constructor() {
+    // Formulaire Création
     this.createForm = this.fb.group({
       carId: ['', Validators.required],
       departureCity: ['', Validators.required],
@@ -78,6 +80,17 @@ export class TripsHistoryPageComponent implements OnInit {
       estimatedDepartureTime: ['', Validators.required],
       estimatedArrivalTime: ['', Validators.required],
       status: ['pending']
+    });
+
+    // Formulaire Édition
+    this.editForm = this.fb.group({
+      id: [''],
+      carId: ['', Validators.required],
+      departureCity: ['', Validators.required],
+      arrivalCity: ['', Validators.required],
+      estimatedDepartureTime: ['', Validators.required],
+      estimatedArrivalTime: ['', Validators.required],
+      status: ['', Validators.required]
     });
   }
 
@@ -93,36 +106,23 @@ export class TripsHistoryPageComponent implements OnInit {
   loadData() {
     this.loading = true;
     
-    // 1. Initialiser availableCars$ pour le formulaire modal ET pour la combinaison
     this.availableCars$ = this.firestoreService.getCars(this.COMPANY_ID).pipe(
       startWith([]),
-      shareReplay(1), // Optimisation: évite de recharger pour chaque souscription
-      catchError(err => {
-        console.error("Erreur chargement voitures", err);
-        return of([] as Car[]);
-      })
+      shareReplay(1),
+      catchError(err => of([] as Car[]))
     );
 
-    // 2. Récupérer les trajets
     const rawTrips$ = this.firestoreService.getTrips(this.COMPANY_ID).pipe(
       startWith([]),
-      catchError(err => {
-        console.error("Erreur chargement trajets", err);
-        return of([] as Trip[]);
-      })
+      catchError(err => of([] as Trip[]))
     );
 
-    // 3. Combiner les deux pour l'affichage du tableau
     combineLatest([rawTrips$, this.availableCars$]).pipe(
       map(([trips, cars]) => {
         return trips.map(trip => {
-          // Associer la voiture
           const car = cars.find(c => c.id === trip.carId);
-          
-          // Normaliser les données
           const displayDeparture = trip.departureCity || trip.departure || 'N/A';
           const displayArrival = trip.arrivalCity || trip.arrival || 'N/A';
-          // Sécuriser destinations si undefined dans la DB
           const destinations = trip.destinations || (trip.arrivalCity ? [trip.arrivalCity] : []);
 
           return { 
@@ -140,75 +140,152 @@ export class TripsHistoryPageComponent implements OnInit {
         this.applyFilters();
         this.loading = false;
       },
-      error: (err) => {
-        console.error("Erreur loadData:", err);
-        this.loading = false;
-      }
+      error: (err) => this.loading = false
     });
   }
 
-  // --- FILTRES & TRI ---
+  // --- ACTIONS MODALES ---
 
-  onSearchChange() { this.applyFilters(); }
-  onFilterStatusChange() { this.applyFilters(); }
-  
-  clearFilters() {
-    this.searchText = '';
-    this.filterStatus = 'all';
-    this.applyFilters();
+  openCreateModal() {
+    this.createForm.reset({ status: 'pending', carId: '' });
+    this.showCreateModal = true;
   }
 
+  closeCreateModal() { this.showCreateModal = false; }
+
+  openEditModal(trip: TripWithCar) {
+    this.editingTrip = trip;
+    const dep = this.toDateTimeLocal(trip.estimatedDepartureTime);
+    const arr = this.toDateTimeLocal(trip.estimatedArrivalTime);
+
+    this.editForm.patchValue({
+      id: trip.id,
+      carId: trip.carId,
+      departureCity: trip.displayDeparture,
+      arrivalCity: trip.displayArrival,
+      estimatedDepartureTime: dep,
+      estimatedArrivalTime: arr,
+      status: trip.status
+    });
+    
+    this.showEditModal = true;
+  }
+
+  closeEditModal() {
+    this.showEditModal = false;
+    this.editingTrip = null;
+  }
+
+  async updateTrip() {
+    if (this.editForm.invalid) return;
+    this.loading = true;
+    try {
+      const val = this.editForm.value;
+      const updatedData: any = {
+        id: val.id,
+        carId: val.carId,
+        departureCity: val.departureCity,
+        arrivalCity: val.arrivalCity,
+        departure: val.departureCity, // Legacy
+        arrival: val.arrivalCity,     // Legacy
+        status: val.status,
+        estimatedDepartureTime: Timestamp.fromDate(new Date(val.estimatedDepartureTime)),
+        estimatedArrivalTime: Timestamp.fromDate(new Date(val.estimatedArrivalTime)),
+        updatedAt: Timestamp.now()
+      };
+
+      await this.firestoreService.updateTrip(updatedData);
+      this.closeEditModal();
+      alert('✅ Trajet modifié avec succès !');
+    } catch (e: any) {
+      alert('Erreur: ' + e.message);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private toDateTimeLocal(val: any): string {
+    if (!val) return '';
+    try {
+      const date = val.toDate ? val.toDate() : new Date(val);
+      const pad = (n: number) => n < 10 ? '0' + n : n;
+      return date.getFullYear() + '-' +
+        pad(date.getMonth() + 1) + '-' +
+        pad(date.getDate()) + 'T' +
+        pad(date.getHours()) + ':' +
+        pad(date.getMinutes());
+    } catch(e) { return ''; }
+  }
+
+  // --- ACTIONS CRUD BASIQUES ---
+  
+  async createTrip() {
+    if (this.createForm.invalid) { alert("Champs manquants"); return; }
+    this.loading = true;
+    try {
+      const formData = this.createForm.value;
+      const newTrip: any = {
+        companyId: this.COMPANY_ID,
+        carId: formData.carId,
+        departureCity: formData.departureCity,
+        arrivalCity: formData.arrivalCity,
+        departure: formData.departureCity,
+        arrival: formData.arrivalCity,
+        estimatedDepartureTime: Timestamp.fromDate(new Date(formData.estimatedDepartureTime)),
+        estimatedArrivalTime: Timestamp.fromDate(new Date(formData.estimatedArrivalTime)),
+        status: formData.status || 'pending',
+        createdAt: Timestamp.now()
+      };
+      await this.firestoreService.addTrip(newTrip);
+      this.closeCreateModal();
+      alert('✅ Trajet ajouté !');
+    } catch (e: any) { alert('Erreur: ' + e.message); } finally { this.loading = false; }
+  }
+
+  deleteTrip(trip: TripWithCar) {
+    if (!trip.id) return;
+    if (confirm('Supprimer ce trajet ?')) this.firestoreService.deleteTrip(trip.id);
+  }
+
+  async duplicateTrip(trip: TripWithCar) {
+    const { id, car, displayDeparture, displayArrival, ...data } = trip; 
+    const copy = { ...data, status: 'pending', createdAt: Timestamp.now() };
+    await this.firestoreService.addTrip(copy);
+    alert('Trajet dupliqué !');
+  }
+
+  openDetailsModal(trip: TripWithCar) { console.log(trip); }
+
+  // --- FILTRES & TRI ---
+  
   applyFilters() {
     let res = [...this.allTrips];
-
-    // Filtre Texte
     if (this.searchText) {
       const term = this.searchText.toLowerCase();
-      res = res.filter(t => 
-        (t.displayDeparture || '').toLowerCase().includes(term) ||
-        (t.displayArrival || '').toLowerCase().includes(term) ||
-        (t.car?.brand || '').toLowerCase().includes(term) ||
-        (t.car?.licensePlate || '').toLowerCase().includes(term)
-      );
+      res = res.filter(t => t.displayDeparture.toLowerCase().includes(term) || t.displayArrival.toLowerCase().includes(term));
     }
-
-    // Filtre Statut
-    if (this.filterStatus !== 'all') {
-      res = res.filter(t => t.status === this.filterStatus);
-    }
-
-    // Tri
+    if (this.filterStatus !== 'all') res = res.filter(t => t.status === this.filterStatus);
+    
     res.sort((a: any, b: any) => {
       let valA = a[this.sortField];
       let valB = b[this.sortField];
-      
-      // Gestion Timestamp Firestore
-      if (this.sortField === 'estimatedDepartureTime' || this.sortField === 'estimatedArrivalTime') {
+      if (this.sortField.includes('Time')) {
          valA = valA?.toMillis ? valA.toMillis() : new Date(valA || 0).getTime();
          valB = valB?.toMillis ? valB.toMillis() : new Date(valB || 0).getTime();
       }
-
-      // Fallback sur les chaînes affichées si tri par ville
-      if (this.sortField === 'departureCity') {
-        valA = a.displayDeparture;
-        valB = b.displayDeparture;
-      }
-
       if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
       if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-
     this.filteredTrips = res;
   }
 
+  onSearchChange() { this.applyFilters(); }
+  onFilterStatusChange() { this.applyFilters(); }
+  clearFilters() { this.searchText = ''; this.filterStatus = 'all'; this.applyFilters(); }
   onSortChange(field: string) {
-    if (this.sortField === field) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortField = field;
-      this.sortDirection = 'asc';
-    }
+    this.sortField = field;
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     this.applyFilters();
   }
 
@@ -217,9 +294,7 @@ export class TripsHistoryPageComponent implements OnInit {
   toggleSelectAll() {
     this.selectAll = !this.selectAll;
     this.selectedTrips.clear();
-    if (this.selectAll) {
-      this.filteredTrips.forEach(t => { if (t.id) this.selectedTrips.add(t.id); });
-    }
+    if (this.selectAll) this.filteredTrips.forEach(t => { if (t.id) this.selectedTrips.add(t.id); });
   }
 
   toggleSelect(id: string) {
@@ -230,83 +305,12 @@ export class TripsHistoryPageComponent implements OnInit {
 
   async deleteSelected() {
     if (!confirm(`Supprimer ${this.selectedTrips.size} trajets ?`)) return;
-    const promises = Array.from(this.selectedTrips).map(id => this.firestoreService.deleteTrip(id));
-    await Promise.all(promises);
-    this.selectedTrips.clear();
+    await Promise.all(Array.from(this.selectedTrips).map(id => this.firestoreService.deleteTrip(id)));
+    this.selectedTrips.clear(); 
     this.selectAll = false;
   }
 
-  // --- ACTIONS CRUD ---
-
-  openCreateModal() {
-    this.createForm.reset({ status: 'pending', carId: '' });
-    this.showCreateModal = true;
-  }
-
-  closeCreateModal() {
-    this.showCreateModal = false;
-  }
-
-  async createTrip() {
-    if (this.createForm.invalid) {
-      alert("Veuillez remplir tous les champs obligatoires");
-      return;
-    }
-    this.loading = true;
-    try {
-      const formData = this.createForm.value;
-      const newTrip: any = {
-        companyId: this.COMPANY_ID,
-        driverId: this.COMPANY_ID,
-        carId: formData.carId,
-        departureCity: formData.departureCity,
-        arrivalCity: formData.arrivalCity,
-        destinations: [formData.arrivalCity],
-        steps: [],
-        estimatedDepartureTime: Timestamp.fromDate(new Date(formData.estimatedDepartureTime)),
-        estimatedArrivalTime: Timestamp.fromDate(new Date(formData.estimatedArrivalTime)),
-        status: formData.status || 'pending',
-        createdAt: Timestamp.now()
-      };
-
-      await this.firestoreService.addTrip(newTrip);
-      this.closeCreateModal();
-      alert('✅ Trajet ajouté !');
-    } catch (e: any) {
-      console.error(e);
-      alert('Erreur: ' + e.message);
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  deleteTrip(trip: TripWithCar) {
-    if (!trip.id) return;
-    if (confirm('Supprimer ce trajet ?')) {
-      this.firestoreService.deleteTrip(trip.id);
-    }
-  }
-
-  async duplicateTrip(trip: TripWithCar) {
-    const { id, car, displayDeparture, displayArrival, ...data } = trip; 
-    const copy = { 
-      ...data, 
-      status: 'pending', 
-      createdAt: Timestamp.now()
-    };
-    await this.firestoreService.addTrip(copy);
-    alert('Trajet dupliqué !');
-  }
-  
-  openEditModal(trip: TripWithCar) {
-    alert("Utilisez la page 'Nouveau Trajet' pour créer des itinéraires complexes.");
-  }
-  
-  openDetailsModal(trip: TripWithCar) {
-    console.log(trip);
-  }
-
-  // --- HELPERS ---
+  // --- MÉTHODES MANQUANTES AJOUTÉES ---
 
   countByStatus(status: string): number {
     return this.allTrips.filter(t => t.status === status).length;
@@ -314,19 +318,20 @@ export class TripsHistoryPageComponent implements OnInit {
 
   async quickUpdateStatus(trip: TripWithCar, status: any) {
     if (!trip.id) return;
-    const newStatus = status.value || status;
-    await this.firestoreService.updateTrip({ id: trip.id, status: newStatus });
+    const newVal = status.value || status;
+    await this.firestoreService.updateTrip({ id: trip.id, status: newVal });
   }
 
   formatDate(val: any): string {
     if (!val) return '-';
-    try {
+    try { 
       const date = val.toDate ? val.toDate() : new Date(val);
-      return new DatePipe('en-US').transform(date, 'dd/MM/yyyy HH:mm') || '-';
+      // Utilisation du DatePipe injecté
+      return this.datePipe.transform(date, 'dd/MM/yyyy HH:mm') || '-'; 
     } catch(e) { return '-'; }
   }
 
   exportToCSV() {
-    alert("Bientôt disponible");
+    alert("Export CSV bientôt disponible !");
   }
 }
