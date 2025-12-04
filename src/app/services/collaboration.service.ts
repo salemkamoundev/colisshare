@@ -10,23 +10,26 @@ import { CollaborationRequest, PackageDetails } from '../interfaces/collaboratio
 export class CollaborationService {
   private firestore = inject(Firestore);
 
-  // --- ENVOI ---
-  async sendRequest(currentUserId: string, targetUserId: string, details: PackageDetails) {
+  async sendRequest(currentUserId: string, targetUserId: string, details: PackageDetails, tripId?: string) {
     const requestsRef = collection(this.firestore, 'collaboration_requests');
-    const q = query(requestsRef, where('fromUserId', '==', currentUserId), where('toUserId', '==', targetUserId), where('status', '==', 'pending'));
+    let q;
+    if (tripId) {
+       q = query(requestsRef, where('fromUserId', '==', currentUserId), where('targetTripId', '==', tripId), where('status', '==', 'pending'));
+    } else {
+       q = query(requestsRef, where('fromUserId', '==', currentUserId), where('toUserId', '==', targetUserId), where('status', '==', 'pending'));
+    }
     const snapshot = await getDocs(q);
-    if (!snapshot.empty) throw new Error('Demande déjà en attente.');
+    if (!snapshot.empty) throw new Error('Une demande est déjà en cours.');
 
     return addDoc(requestsRef, {
       fromUserId: currentUserId,
       toUserId: targetUserId,
+      targetTripId: tripId || null,
       packageDetails: details,
       status: 'pending',
       createdAt: Timestamp.now()
     });
   }
-
-  // --- CHANGEMENTS D'ETAT ---
 
   async proposePrice(requestId: string, price: number, note: string) {
     const docRef = doc(this.firestore, 'collaboration_requests', requestId);
@@ -38,67 +41,43 @@ export class CollaborationService {
     return updateDoc(docRef, { status: 'confirmed' });
   }
 
-  // NOUVELLE METHODE : TERMINER LA MISSION
   async markAsCompleted(requestId: string) {
     const docRef = doc(this.firestore, 'collaboration_requests', requestId);
-    return updateDoc(docRef, { 
-      status: 'completed',
-      completedAt: Timestamp.now()
-    });
+    return updateDoc(docRef, { status: 'completed', completedAt: Timestamp.now() });
   }
 
-  async acceptRequest(requestId: string, price: number, note: string) {
-    return this.proposePrice(requestId, price, note);
-  }
-
-  async declineRequest(requestId: string) {
-    const docRef = doc(this.firestore, 'collaboration_requests', requestId);
-    return updateDoc(docRef, { status: 'rejected' });
-  }
-
-  async deleteCollaboration(requestId: string) {
-    const docRef = doc(this.firestore, 'collaboration_requests', requestId);
-    return deleteDoc(docRef);
-  }
-
-  // --- LECTURE ---
+  async acceptRequest(requestId: string, price: number, note: string) { return this.proposePrice(requestId, price, note); }
+  async declineRequest(requestId: string) { const docRef = doc(this.firestore, 'collaboration_requests', requestId); return updateDoc(docRef, { status: 'rejected' }); }
+  async deleteCollaboration(requestId: string) { const docRef = doc(this.firestore, 'collaboration_requests', requestId); return deleteDoc(docRef); }
 
   getIncomingRequests(userId: string): Observable<CollaborationRequest[]> {
-    const requestsRef = collection(this.firestore, 'collaboration_requests');
-    const q = query(requestsRef, where('toUserId', '==', userId));
+    const q = query(collection(this.firestore, 'collaboration_requests'), where('toUserId', '==', userId));
     return collectionData(q, { idField: 'id' }) as Observable<CollaborationRequest[]>;
   }
 
   getOutgoingRequests(userId: string): Observable<CollaborationRequest[]> {
-    const requestsRef = collection(this.firestore, 'collaboration_requests');
-    const q = query(requestsRef, where('fromUserId', '==', userId));
+    const q = query(collection(this.firestore, 'collaboration_requests'), where('fromUserId', '==', userId));
     return collectionData(q, { idField: 'id' }) as Observable<CollaborationRequest[]>;
   }
 
   getPendingRequests(userId: string) { return this.getIncomingRequests(userId); }
 
-  // Modifié pour inclure 'confirmed' ET 'completed' pour le chat
   getAcceptedCollaborations(userId: string): Observable<CollaborationRequest[]> {
-    const requestsRef = collection(this.firestore, 'collaboration_requests');
-    const q1 = query(requestsRef, where('toUserId', '==', userId));
-    const q2 = query(requestsRef, where('fromUserId', '==', userId));
+    const q1 = query(collection(this.firestore, 'collaboration_requests'), where('toUserId', '==', userId));
+    const q2 = query(collection(this.firestore, 'collaboration_requests'), where('fromUserId', '==', userId));
     
-    const r$ = collectionData(q1, { idField: 'id' }) as Observable<CollaborationRequest[]>;
-    const s$ = collectionData(q2, { idField: 'id' }) as Observable<CollaborationRequest[]>;
-    
-    return combineLatest([r$, s$]).pipe(
-      map(([a, b]) => {
-        // On retourne tout ce qui est actif ou fini (pour l'historique global si besoin)
-        const all = [...a, ...b];
-        return all.filter(r => r.status === 'confirmed' || r.status === 'completed' || r.status === 'price_proposed');
-      })
+    // Typage explicite pour éviter l'erreur TS2322 et TS4111
+    const r1$ = collectionData(q1, { idField: 'id' }) as Observable<CollaborationRequest[]>;
+    const r2$ = collectionData(q2, { idField: 'id' }) as Observable<CollaborationRequest[]>;
+
+    return combineLatest([r1$, r2$]).pipe(
+      map(([a, b]) => [...a, ...b].filter(r => ['confirmed', 'completed', 'price_proposed'].includes(r.status)))
     );
   }
 
   getAllUsers(): Observable<AppUser[]> {
-    const usersRef = collection(this.firestore, 'users');
-    return collectionData(usersRef, { idField: 'uid' }) as Observable<AppUser[]>;
+    return collectionData(collection(this.firestore, 'users'), { idField: 'uid' }) as Observable<AppUser[]>;
   }
-
+  
   getSharedTripsForUser(uid: string) { return of([]); }
 }

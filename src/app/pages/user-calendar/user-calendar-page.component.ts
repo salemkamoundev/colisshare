@@ -29,10 +29,12 @@ export class UserCalendarPageComponent implements OnInit {
   currentUser: any = null;
   trips: Trip[] = [];
 
+  // Configuration du calendrier
   calendarOptions: CalendarOptions = {
     initialView: 'dayGridMonth',
     plugins: [dayGridPlugin, interactionPlugin],
     events: [],
+    // Liaison des méthodes correctement
     dateClick: (arg) => this.handleDateClick(arg),
     eventClick: (arg) => this.handleEventClick(arg),
     headerToolbar: {
@@ -42,6 +44,7 @@ export class UserCalendarPageComponent implements OnInit {
     }
   };
 
+  // Modale
   showModal = false;
   selectedDate = '';
   selectedTripId: string | null = null;
@@ -64,24 +67,27 @@ export class UserCalendarPageComponent implements OnInit {
   loadTargetTrips() {
     this.firestoreService.getTrips(this.targetUserId).subscribe(trips => {
       this.trips = trips;
-      // Syntaxe corrigée pour le mapping
+      
+      // Transformation des données pour FullCalendar (Syntaxe corrigée)
       this.calendarOptions.events = trips.map(t => {
         return {
           title: `${t.departureCity} -> ${t.arrivalCity}`,
           start: this.parseDate(t.estimatedDepartureTime),
-          color: '#2563eb',
+          color: '#2563eb', // blue-600
           extendedProps: { tripId: t.id }
         };
       });
     });
   }
 
+  // Méthode appelée lors du clic sur une case vide
   handleDateClick(arg: any) {
     this.selectedDate = arg.dateStr;
     this.selectedTripId = null;
     this.openModal();
   }
 
+  // Méthode appelée lors du clic sur un événement (trajet)
   handleEventClick(arg: any) {
     this.selectedDate = arg.event.startStr;
     this.selectedTripId = arg.event.extendedProps.tripId;
@@ -89,7 +95,13 @@ export class UserCalendarPageComponent implements OnInit {
   }
 
   openModal() {
-    this.packageForm = { description: '', clientName: '', clientAddress: '', date: this.selectedDate };
+    // Reset du formulaire
+    this.packageForm = { 
+      description: '', 
+      clientName: '', 
+      clientAddress: '', 
+      date: this.selectedDate 
+    };
     this.showModal = true;
   }
 
@@ -102,15 +114,19 @@ export class UserCalendarPageComponent implements OnInit {
       alert("Connectez-vous d'abord");
       return;
     }
+    
     try {
+      // Si un trajet spécifique a été cliqué, on l'ajoute en note
       if (this.selectedTripId) {
         this.packageForm.description = `[Sur Trajet Spécifique] ${this.packageForm.description}`;
       }
+
       await this.collabService.sendRequest(
         this.currentUser.uid,
         this.targetUserId,
         this.packageForm
       );
+      
       alert('✅ Demande envoyée au chauffeur !');
       this.closeModal();
     } catch (e: any) {
@@ -121,6 +137,7 @@ export class UserCalendarPageComponent implements OnInit {
   private parseDate(val: any): string {
     if (!val) return '';
     try {
+      // Gestion robuste des Timestamps Firestore / Date JS
       const d = val.toDate ? val.toDate() : new Date(val);
       return d.toISOString().split('T')[0];
     } catch { return ''; }

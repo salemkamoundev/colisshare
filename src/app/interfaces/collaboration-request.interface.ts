@@ -15,21 +15,22 @@ export interface CollaborationResponse {
   respondedAt: Timestamp;
 }
 
-// Ajout de 'completed'
 export type CollabStatus = 'pending' | 'price_proposed' | 'confirmed' | 'rejected' | 'completed';
 
 export interface CollaborationRequest {
   id?: string;
   fromUserId: string;
   toUserId: string;
+  targetTripId?: string; // NOUVEAU CHAMP : Lien vers le trajet spécifique
   
   packageDetails: PackageDetails;
   response?: CollaborationResponse;
   
   status: CollabStatus;
   createdAt: Timestamp | any;
-  completedAt?: Timestamp | any; // Nouveau champ date de fin
+  completedAt?: Timestamp | any;
   
   fromUser?: AppUser;
   toUser?: AppUser;
+  tripData?: any; // Pour affichage (jointure manuelle)
 }
