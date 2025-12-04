@@ -26,6 +26,7 @@ interface TripWithCar extends Trip {
 })
 export class TripsHistoryPageComponent implements OnInit {
   private readonly COMPANY_ID = 'AbC1dE2fG3hI4jK5lM6n';
+  private readonly DRIVER_ID = 'UIDCurrentDriver';
 
   trips$!: Observable<TripWithCar[]>;
   filteredTrips: TripWithCar[] = [];
@@ -37,11 +38,14 @@ export class TripsHistoryPageComponent implements OnInit {
   sortField: 'departureCity' | 'estimatedDepartureTime' | 'status' = 'estimatedDepartureTime';
   sortDirection: 'asc' | 'desc' = 'desc';
   
+  showCreateModal = false;
   showEditModal = false;
-  editForm!: FormGroup;
-  selectedTrip: Trip | null = null;
-  
   showDetailsModal = false;
+
+  createForm!: FormGroup;
+  editForm!: FormGroup;
+
+  selectedTrip: Trip | null = null;
   detailsTrip: TripWithCar | null = null;
   
   loading = false;
@@ -71,6 +75,7 @@ export class TripsHistoryPageComponent implements OnInit {
   ngOnInit(): void {
     this.loadCars();
     this.loadTrips();
+    this.initCreateForm();
     this.initEditForm();
   }
 
@@ -99,9 +104,9 @@ export class TripsHistoryPageComponent implements OnInit {
       if (this.searchText) {
         const search = this.searchText.toLowerCase();
         const matchCity = trip.departureCity.toLowerCase().includes(search) ||
-                         trip.arrivalCity.toLowerCase().includes(search);
+                          trip.arrivalCity.toLowerCase().includes(search);
         const matchCar = trip.car?.licensePlate?.toLowerCase().includes(search) ||
-                        trip.car?.make?.toLowerCase().includes(search);
+                         trip.car?.make?.toLowerCase().includes(search);
         if (!matchCity && !matchCar) return false;
       }
       if (this.filterStatus !== 'all' && trip.status !== this.filterStatus) {
@@ -126,6 +131,20 @@ export class TripsHistoryPageComponent implements OnInit {
     });
   }
 
+  // ✅ FIX: Ajouter TOUS les champs utilisés dans le template
+  initCreateForm(): void {
+    this.createForm = this.fb.group({
+      carId: ['', Validators.required],
+      departureCity: ['', Validators.required],
+      arrivalCity: ['', Validators.required],
+      estimatedDepartureTime: ['', Validators.required],
+      estimatedArrivalTime: ['', Validators.required],
+      // ✅ Champs manquants ajoutés
+      assignedDriverId: [''],
+      isOperational: [true],
+    });
+  }
+
   initEditForm(): void {
     this.editForm = this.fb.group({
       carId: ['', Validators.required],
@@ -139,7 +158,7 @@ export class TripsHistoryPageComponent implements OnInit {
 
   onSearchChange(): void { this.loadTrips(); }
   onFilterStatusChange(): void { this.loadTrips(); }
-  
+
   onSortChange(field: typeof this.sortField): void {
     if (this.sortField === field) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -200,6 +219,53 @@ export class TripsHistoryPageComponent implements OnInit {
     }
   }
 
+  openCreateModal(): void {
+    this.createForm.reset({
+      isOperational: true,
+      assignedDriverId: '',
+    });
+    this.showCreateModal = true;
+  }
+
+  closeCreateModal(): void {
+    this.showCreateModal = false;
+    this.createForm.reset();
+  }
+
+  async createTrip(): Promise<void> {
+    if (this.createForm.invalid) {
+      alert('⚠️ Veuillez remplir tous les champs requis.');
+      return;
+    }
+
+    this.loading = true;
+    const v = this.createForm.value;
+
+    const tripData: Omit<Trip, 'id' | 'createdAt' | 'updatedAt'> = {
+      carId: v.carId,
+      companyId: this.COMPANY_ID,
+      driverId: this.DRIVER_ID,
+      departureCity: v.departureCity,
+      arrivalCity: v.arrivalCity,
+      estimatedDepartureTime: Timestamp.fromDate(new Date(v.estimatedDepartureTime)),
+      estimatedArrivalTime: Timestamp.fromDate(new Date(v.estimatedArrivalTime)),
+      status: 'pending',
+      steps: [],
+    };
+
+    try {
+      const id = await this.firestoreService.addTrip(tripData);
+      alert('✅ Trajet enregistré avec succès !');
+      console.log('✅ Nouveau trajet ID:', id, tripData);
+      this.closeCreateModal();
+    } catch (error: any) {
+      console.error('❌ Erreur createTrip:', error);
+      alert('❌ Erreur: ' + (error.message || 'Impossible d\'enregistrer'));
+    } finally {
+      this.loading = false;
+    }
+  }
+
   openDetailsModal(trip: TripWithCar): void {
     this.detailsTrip = trip;
     this.showDetailsModal = true;
@@ -236,17 +302,18 @@ export class TripsHistoryPageComponent implements OnInit {
       alert('⚠️ Formulaire invalide');
       return;
     }
+
     this.loading = true;
     try {
-      const formValue = this.editForm.value;
+      const v = this.editForm.value;
       const updatedTrip: Trip = {
         ...this.selectedTrip,
-        carId: formValue.carId,
-        departureCity: formValue.departureCity,
-        arrivalCity: formValue.arrivalCity,
-        estimatedDepartureTime: Timestamp.fromDate(new Date(formValue.estimatedDepartureTime)),
-        estimatedArrivalTime: Timestamp.fromDate(new Date(formValue.estimatedArrivalTime)),
-        status: formValue.status,
+        carId: v.carId,
+        departureCity: v.departureCity,
+        arrivalCity: v.arrivalCity,
+        estimatedDepartureTime: Timestamp.fromDate(new Date(v.estimatedDepartureTime)),
+        estimatedArrivalTime: Timestamp.fromDate(new Date(v.estimatedArrivalTime)),
+        status: v.status,
         updatedAt: Timestamp.now(),
       };
       await this.firestoreService.updateTrip(updatedTrip);
@@ -279,7 +346,7 @@ export class TripsHistoryPageComponent implements OnInit {
       const { id, createdAt, updatedAt, ...tripData } = trip;
       await this.firestoreService.addTrip({
         ...tripData,
-        status: 'pending' as TripStatus,
+        status: 'pending',
       });
       alert('✅ Trajet dupliqué !');
     } catch (error: any) {
@@ -288,6 +355,7 @@ export class TripsHistoryPageComponent implements OnInit {
       this.loading = false;
     }
   }
+
   async quickUpdateStatus(trip: Trip, newStatus: TripStatus): Promise<void> {
     if (!trip.id) return;
     this.loading = true;
@@ -302,10 +370,6 @@ export class TripsHistoryPageComponent implements OnInit {
     } finally {
       this.loading = false;
     }
-  }
-
-  goToCreateTrip(): void {
-    this.router.navigate(['/trajets/saisie']);
   }
 
   exportToCSV(): void {

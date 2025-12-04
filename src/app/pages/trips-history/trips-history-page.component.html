@@ -6,7 +6,7 @@
       <p class="text-gray-600 text-sm mt-1">Gérez et suivez tous vos trajets</p>
     </div>
     <button
-      (click)="goToCreateTrip()"
+      (click)="openCreateModal()"
       class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md flex items-center gap-2"
     >
       <span class="text-xl">➕</span>
@@ -128,7 +128,7 @@
         <div class="text-6xl mb-4">📭</div>
         <p class="text-xl text-gray-500 mb-4">Aucun trajet trouvé</p>
         <button
-          (click)="goToCreateTrip()"
+          (click)="openCreateModal()"
           class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
         >
           Créer votre premier trajet
@@ -268,4 +268,116 @@
   </ng-template>
 </div>
 
-<!-- MODALS restent identiques... -->
+<!-- MODAL CRÉATION -->
+<div
+  *ngIf="showCreateModal"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+  (click)="closeCreateModal()"
+>
+  <div
+    class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-gray-800">➕ Nouveau Trajet</h3>
+        <button
+          (click)="closeCreateModal()"
+          class="text-gray-500 hover:text-gray-700 text-3xl leading-none"
+        >
+          ✕
+        </button>
+      </div>
+
+      <form [formGroup]="createForm" (ngSubmit)="createTrip()" class="space-y-5">
+        <!-- Voiture -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            🚗 Voiture <span class="text-red-500">*</span>
+          </label>
+          <select
+            formControlName="carId"
+            class="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="" disabled>Sélectionner</option>
+            <ng-container *ngIf="availableCars$ | async as cars">
+              <option *ngFor="let car of cars" [value]="car.id">
+                {{ car.make }} {{ car.model }} ({{ car.licensePlate }})
+              </option>
+            </ng-container>
+          </select>
+        </div>
+
+        <!-- Villes -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              🚀 Ville de Départ <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              formControlName="departureCity"
+              class="w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              🏁 Ville d'Arrivée <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              formControlName="arrivalCity"
+              class="w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+        </div>
+
+        <!-- Dates -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              ⏰ Départ <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              formControlName="estimatedDepartureTime"
+              class="w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              ⏱️ Arrivée <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              formControlName="estimatedArrivalTime"
+              class="w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+        </div>
+
+        <!-- Boutons -->
+        <div class="flex gap-3 pt-4">
+          <button
+            type="submit"
+            [disabled]="createForm.invalid || loading"
+            class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold transition"
+          >
+            <span *ngIf="!loading">✅ Enregistrer</span>
+            <span *ngIf="loading">⏳ Enregistrement...</span>
+          </button>
+          <button
+            type="button"
+            (click)="closeCreateModal()"
+            [disabled]="loading"
+            class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:bg-gray-400 font-semibold transition"
+          >
+            ❌ Annuler
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS D'ÉDITION / DÉTAILS (inchangés, déjà présents dans ton code précédent) -->

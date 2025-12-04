@@ -84,8 +84,8 @@
                         <p class="text-lg font-bold text-gray-900">{{ car.make }} {{ car.model }}</p>
                         <p class="text-sm text-gray-600">Plaque: {{ car.licensePlate }}</p>
                         <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
-                              [ngClass]="car.isOperational ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-                            {{ car.isOperational ? 'Opérationnelle' : 'Maintenance' }}
+                              [ngClass]="car.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                            {{ car.active ? 'Opérationnelle' : 'Maintenance' }}
                         </span>
                     </div>
 

@@ -23,14 +23,8 @@ export class CarsManagementPageComponent implements OnInit {
   carForm!: FormGroup;
   editingCar: Car | null = null;
   showModal = false;
-  showForm = false;
   loading = false;
-  loadError = false;
   errorMessage = '';
-
-  get isEditing(): boolean {
-    return !!this.editingCar;
-  }
 
   constructor(
     private fb: FormBuilder,
@@ -43,39 +37,23 @@ export class CarsManagementPageComponent implements OnInit {
   }
 
   initForm(): void {
+    // ✅ Valeurs par défaut ajoutées pour éviter le formulaire invalide dès le départ
     this.carForm = this.fb.group({
       make: ['', Validators.required],
       model: ['', Validators.required],
-      year: ['', [Validators.required, Validators.min(1900)]],
+      year: [new Date().getFullYear(), [Validators.required, Validators.min(1900), Validators.max(2100)]],
       licensePlate: ['', Validators.required],
-      capacity: ['', [Validators.required, Validators.min(1)]],
+      capacity: [5, [Validators.required, Validators.min(1)]],
       active: [true],
     });
-    this.editingCar = null;
   }
 
   loadCars(): void {
     try {
       this.cars$ = this.firestoreService.getCars(this.COMPANY_ID);
-      this.loadError = false;
-      this.errorMessage = '';
     } catch (error: any) {
-      this.loadError = true;
-      this.errorMessage = error.message || 'Erreur de chargement';
+      this.errorMessage = 'Erreur de chargement des voitures.';
     }
-  }
-
-  toggleForm(): void {
-    this.showForm = !this.showForm;
-    if (!this.showForm) {
-      this.initForm();
-    }
-  }
-
-  onSelectCar(car: Car): void {
-    this.editingCar = car;
-    this.carForm.patchValue(car);
-    this.showForm = true;
   }
 
   openModal(car?: Car): void {
@@ -83,28 +61,32 @@ export class CarsManagementPageComponent implements OnInit {
     if (car) {
       this.carForm.patchValue(car);
     } else {
-      this.carForm.reset({ active: true });
+      // Reset avec des valeurs par défaut propres
+      this.carForm.reset({ 
+        year: new Date().getFullYear(),
+        capacity: 5,
+        active: true 
+      });
     }
     this.showModal = true;
-    this.showForm = true;
   }
 
   closeModal(): void {
     this.showModal = false;
-    this.showForm = false;
     this.editingCar = null;
-    this.carForm.reset({ active: true });
-  }
-
-  cancelEdit(): void {
-    this.showForm = false;
-    this.editingCar = null;
-    this.carForm.reset({ active: true });
   }
 
   async onSubmit(): Promise<void> {
+    // ✅ DEBUG : Si invalide, on liste les champs manquants
     if (this.carForm.invalid) {
-      alert('⚠️ Veuillez remplir tous les champs requis.');
+      const controls = this.carForm.controls;
+      const invalidFields = [];
+      for (const name in controls) {
+        if (controls[name].invalid) {
+          invalidFields.push(name);
+        }
+      }
+      alert(`⚠️ Impossible d'enregistrer.\nChamps invalides ou manquants :\n👉 ${invalidFields.join('\n👉 ')}`);
       return;
     }
 
@@ -112,7 +94,6 @@ export class CarsManagementPageComponent implements OnInit {
 
     try {
       if (this.editingCar?.id) {
-        // UPDATE
         const carToUpdate = {
           id: this.editingCar.id,
           ...this.carForm.value,
@@ -120,14 +101,11 @@ export class CarsManagementPageComponent implements OnInit {
         await this.firestoreService.updateCar(carToUpdate);
         alert('✅ Voiture mise à jour !');
       } else {
-        // CREATE
         const carData = this.carForm.value;
         await this.firestoreService.addCar(carData);
         alert('✅ Voiture ajoutée !');
       }
-
       this.closeModal();
-      this.showForm = false;
     } catch (error: any) {
       console.error('❌ Erreur:', error);
       alert('❌ Erreur: ' + error.message);
@@ -136,22 +114,16 @@ export class CarsManagementPageComponent implements OnInit {
     }
   }
 
-  async onDeleteCar(carId: string, carName: string): Promise<void> {
+  async deleteCar(carId: string, carName: string): Promise<void> {
     if (!confirm(`🗑️ Supprimer ${carName} ?`)) return;
-
     this.loading = true;
     try {
       await this.firestoreService.deleteCar(carId);
       alert('✅ Voiture supprimée !');
     } catch (error: any) {
-      console.error('❌ Erreur:', error);
       alert('❌ Erreur: ' + error.message);
     } finally {
       this.loading = false;
     }
-  }
-
-  async deleteCar(carId: string): Promise<void> {
-    await this.onDeleteCar(carId, 'cette voiture');
   }
 }
