@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, AfterViewChecked, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -9,37 +9,45 @@ import { ChatService, ChatMessage } from '../../services/chat.service';
   standalone: true,
   imports: [CommonModule, FormsModule, DatePipe],
   templateUrl: './chat.component.html',
-  // styleUrls supprimé ✅
 })
-export class ChatComponent implements OnInit, OnDestroy {
+export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   @Input() conversationId!: string;
   @Input() currentUserId!: string;
+  @ViewChild('scrollMe') private myScrollContainer!: ElementRef;
 
   messages: ChatMessage[] = [];
   draft = '';
   sending = false;
   private subscription?: Subscription;
+  private shouldScroll = false;
 
   constructor(private chatService: ChatService) {}
 
   ngOnInit(): void {
-    if (!this.conversationId || !this.currentUserId) {
-      console.error('❌ conversationId ou currentUserId manquant !');
-      return;
-    }
+    if (!this.conversationId || !this.currentUserId) return;
 
-    // Écouter les messages en temps réel
-    this.subscription = this.chatService
-      .getMessages(this.conversationId)
-      .subscribe({
-        next: (msgs: ChatMessage[]) => {
-          this.messages = msgs;
-          console.log('💬 Messages reçus:', msgs.length);
-        },
-        error: (err: any) => {
-          console.error('❌ Erreur chat:', err);
-        },
-      });
+    this.subscription = this.chatService.getMessages(this.conversationId).subscribe({
+      next: (msgs) => {
+        this.messages = msgs;
+        this.shouldScroll = true;
+        // Marquer comme lu
+        this.chatService.markAsRead(this.conversationId, this.currentUserId, msgs);
+      },
+      error: (err) => console.error(err),
+    });
+  }
+
+  ngAfterViewChecked() {
+    if (this.shouldScroll) {
+      this.scrollToBottom();
+      this.shouldScroll = false;
+    }
+  }
+
+  scrollToBottom(): void {
+    try {
+      this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
+    } catch(err) { }
   }
 
   ngOnDestroy(): void {
@@ -52,16 +60,10 @@ export class ChatComponent implements OnInit, OnDestroy {
 
     this.sending = true;
     try {
-      await this.chatService.sendMessage(
-        this.conversationId,
-        this.currentUserId,
-        text
-      );
+      await this.chatService.sendMessage(this.conversationId, this.currentUserId, text);
       this.draft = '';
-      console.log('✅ Message envoyé');
     } catch (error: any) {
-      console.error('❌ Erreur envoi:', error);
-      alert('❌ Erreur: ' + error.message);
+      alert('Erreur: ' + error.message);
     } finally {
       this.sending = false;
     }

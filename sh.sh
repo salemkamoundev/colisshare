@@ -1,18 +1,18 @@
 #!/bin/bash
 
-echo "📜 Configuration de l'historique complet et des notifications de refus..."
+echo "🔢 Ajout des badges de comptage sur tous les onglets..."
 
 # ==============================================================================
-# 1. MISE À JOUR DU TYPESCRIPT (Logique Historique + Filtres)
+# 1. TYPESCRIPT (Ajout des compteurs)
 # ==============================================================================
 cat << 'EOF' > ./src/app/pages/collab-requests/collab-requests-page.component.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { CollaborationService } from '../../services/collaboration.service';
-import { CollaborationRequest, PackageDetails } from '../../interfaces/collaboration-request.interface';
+import { CollaborationRequest } from '../../interfaces/collaboration-request.interface';
 import { AppUser } from '../../interfaces/user.interface';
 import { HeaderComponent } from '../../components/header/header.component';
 import { Observable, switchMap, of, map, combineLatest } from 'rxjs';
@@ -31,22 +31,19 @@ export class CollaborationRequestsPageComponent {
   
   activeTab: 'search' | 'incoming' | 'outgoing' | 'confirmed' | 'history' = 'search';
 
-  // --- DONNEES ---
+  // --- DONNEES BRUTES ---
   allUsers$ = this.collab.getAllUsers();
 
-  // 1. Reçues (À traiter)
   incomingRequests$ = this.currentUser$.pipe(
     switchMap(u => u ? this.collab.getIncomingRequests(u.uid) : of([])),
     map(reqs => reqs.filter(r => r.status === 'pending' || r.status === 'price_proposed'))
   );
 
-  // 2. Envoyées (En attente)
   outgoingRequests$ = this.currentUser$.pipe(
     switchMap(u => u ? this.collab.getOutgoingRequests(u.uid) : of([])),
     map(reqs => reqs.filter(r => r.status === 'pending' || r.status === 'price_proposed'))
   );
 
-  // 3. Actives (Confirmées)
   confirmedRequests$ = this.currentUser$.pipe(
     switchMap(u => {
       if(!u) return of([]);
@@ -59,7 +56,6 @@ export class CollaborationRequestsPageComponent {
     })
   );
 
-  // 4. HISTORIQUE COMPLET (Terminées + Rejetées)
   historyRequests$ = this.currentUser$.pipe(
     switchMap(u => {
       if(!u) return of([]);
@@ -68,33 +64,41 @@ export class CollaborationRequestsPageComponent {
         this.collab.getOutgoingRequests(u.uid)
       ]).pipe(
         map(([inc, out]) => {
-          // On combine tout et on filtre
           const all = [...inc, ...out];
-          // On garde Completed et Rejected
           return all.filter(r => r.status === 'completed' || r.status === 'rejected')
-                    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); // Tri par date récente
+                    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
         })
       );
     })
   );
 
-  // --- COMPTEURS POUR NOTIFICATIONS ---
-  // On crée un observable pour savoir s'il y a des refus récents non lus (simulé ici par la présence dans l'historique)
-  rejectedCount$ = this.historyRequests$.pipe(
-    map(reqs => reqs.filter(r => r.status === 'rejected').length)
-  );
+  // --- COMPTEURS (POUR LES BADGES) ---
+  allUsersCount$ = this.allUsers$.pipe(map(users => users.length));
+  incomingCount$ = this.incomingRequests$.pipe(map(reqs => reqs.length));
+  outgoingCount$ = this.outgoingRequests$.pipe(map(reqs => reqs.length));
+  confirmedCount$ = this.confirmedRequests$.pipe(map(reqs => reqs.length));
+  historyCount$ = this.historyRequests$.pipe(map(reqs => reqs.length));
 
   // --- MODALES ---
   showPriceModal = false;
   showRequestModal = false;
-  
   selectedReq: CollaborationRequest | null = null;
   selectedTargetUser: AppUser | null = null;
-
   priceForm = { price: 0, note: '' };
-  requestForm: PackageDetails = { description: '', clientName: '', clientAddress: '' };
+  requestForm = { description: '', clientName: '', clientAddress: '' };
 
   setActiveTab(tab: any) { this.activeTab = tab; }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'pending': return 'En attente';
+      case 'price_proposed': return 'Prix Proposé';
+      case 'confirmed': return 'Validé / En cours';
+      case 'completed': return 'Terminé';
+      case 'rejected': return 'Refusé';
+      default: return status;
+    }
+  }
 
   // --- ACTIONS ---
 
@@ -151,25 +155,22 @@ export class CollaborationRequestsPageComponent {
   }
 
   async decline(req: CollaborationRequest) {
-    if(req.id && confirm("Refuser cette collaboration ? Elle sera archivée dans l'historique.")) {
+    if(req.id && confirm("Refuser cette collaboration ?")) {
       await this.collab.declineRequest(req.id);
-      this.setActiveTab('history'); // Redirection pour voir le refus archivé
+      this.setActiveTab('history');
     }
   }
 
-  // Méthodes requises par le HTML (aliases)
   accept(req: CollaborationRequest) { this.openPriceModal(req); }
   closeAcceptModal() { this.showPriceModal = false; }
-  confirmAccept() { this.submitPrice(); } // Le HTML appelle confirmAccept pour valider le prix
-  deleteCollab(req: CollaborationRequest) { if(req.id && confirm('Supprimer définitivement ?')) this.collab.deleteCollaboration(req.id); }
-  
-  // Getter pour le formulaire html
+  confirmAccept() { this.submitPrice(); }
+  deleteCollab(req: CollaborationRequest) { if(req.id && confirm('Supprimer ?')) this.collab.deleteCollaboration(req.id); }
   get acceptFormModel() { return this.priceForm; }
 }
 EOF
 
 # ==============================================================================
-# 2. MISE À JOUR DU HTML (Affichage Historique Détaillé)
+# 2. HTML (Affichage des badges dans les boutons)
 # ==============================================================================
 cat << 'EOF' > ./src/app/pages/collab-requests/collab-requests-page.component.html
 <div class="min-h-screen bg-gray-50 p-6">
@@ -180,37 +181,49 @@ cat << 'EOF' > ./src/app/pages/collab-requests/collab-requests-page.component.ht
       
       <button (click)="setActiveTab('search')" 
               [class.text-indigo-600]="activeTab==='search'" [class.border-indigo-600]="activeTab==='search'" 
-              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition">
-        🔍 Annuaire
+              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition flex items-center gap-2">
+        <span>🔍 Annuaire</span>
+        <ng-container *ngIf="allUsersCount$ | async as count">
+          <span class="ml-1 bg-indigo-100 text-indigo-600 text-xs px-2 py-0.5 rounded-full font-bold">{{ count }}</span>
+        </ng-container>
       </button>
 
       <button (click)="setActiveTab('incoming')" 
               [class.text-blue-600]="activeTab==='incoming'" [class.border-blue-600]="activeTab==='incoming'" 
-              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition">
-        📥 Reçues
-        <ng-container *ngIf="incomingRequests$ | async as reqs">
-           <span *ngIf="reqs.length > 0" class="ml-1 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">{{reqs.length}}</span>
+              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition flex items-center gap-2">
+        <span>📥 Reçues</span>
+        <ng-container *ngIf="incomingCount$ | async as count">
+           <span *ngIf="count > 0" class="ml-1 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">{{ count }}</span>
+           <span *ngIf="count === 0" class="ml-1 bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">0</span>
         </ng-container>
       </button>
 
       <button (click)="setActiveTab('outgoing')" 
               [class.text-blue-600]="activeTab==='outgoing'" [class.border-blue-600]="activeTab==='outgoing'" 
-              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition">
-        📤 Envoyées
+              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition flex items-center gap-2">
+        <span>📤 Envoyées</span>
+        <ng-container *ngIf="outgoingCount$ | async as count">
+           <span *ngIf="count > 0" class="ml-1 bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full font-bold">{{ count }}</span>
+           <span *ngIf="count === 0" class="ml-1 bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">0</span>
+        </ng-container>
       </button>
 
       <button (click)="setActiveTab('confirmed')" 
               [class.text-green-700]="activeTab==='confirmed'" [class.border-green-600]="activeTab==='confirmed'" 
-              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition">
-        ✅ Actives
+              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition flex items-center gap-2">
+        <span>✅ Actives</span>
+        <ng-container *ngIf="confirmedCount$ | async as count">
+           <span *ngIf="count > 0" class="ml-1 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-bold">{{ count }}</span>
+           <span *ngIf="count === 0" class="ml-1 bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">0</span>
+        </ng-container>
       </button>
 
       <button (click)="setActiveTab('history')" 
               [class.text-gray-900]="activeTab==='history'" [class.border-gray-600]="activeTab==='history'" 
-              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition relative">
-        🏁 Historique
-        <ng-container *ngIf="rejectedCount$ | async as count">
-          <span *ngIf="count > 0" class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              class="whitespace-nowrap px-6 py-4 border-b-2 font-medium border-transparent hover:bg-gray-50 transition flex items-center gap-2 relative">
+        <span>🏁 Historique</span>
+        <ng-container *ngIf="historyCount$ | async as count">
+           <span class="ml-1 bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-bold">{{ count }}</span>
         </ng-container>
       </button>
     </div>
@@ -237,14 +250,16 @@ cat << 'EOF' > ./src/app/pages/collab-requests/collab-requests-page.component.ht
         <div *ngFor="let r of requests" class="bg-white p-5 rounded-lg shadow border-l-4" [class.border-yellow-400]="r.status==='pending'" [class.border-blue-400]="r.status==='price_proposed'">
           <div class="flex justify-between">
             <h3 class="font-bold">De : {{ r.fromUserId | slice:0:5 }}...</h3>
-            <span class="text-xs px-2 py-1 rounded font-bold" [ngClass]="{'bg-yellow-100': r.status==='pending', 'bg-blue-100': r.status==='price_proposed'}">{{ r.status }}</span>
+            <span class="text-xs px-2 py-1 rounded font-bold" [ngClass]="{'bg-yellow-100': r.status==='pending', 'bg-blue-100': r.status==='price_proposed'}">
+              {{ getStatusLabel(r.status) }}
+            </span>
           </div>
           <p class="text-sm text-gray-600 mt-2">📦 {{ r.packageDetails.description }}</p>
           <div class="mt-4 flex gap-2" *ngIf="r.status === 'pending'">
             <button (click)="openPriceModal(r)" class="bg-green-600 text-white px-3 py-1.5 rounded text-sm">Accepter</button>
             <button (click)="decline(r)" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm">Refuser</button>
           </div>
-          <p *ngIf="r.status === 'price_proposed'" class="text-xs text-blue-600 mt-2">En attente validation client.</p>
+          <p *ngIf="r.status === 'price_proposed'" class="text-xs text-blue-600 mt-2 font-medium">Offre de {{ r.response?.price }} TND envoyée.</p>
         </div>
       </ng-container>
     </div>
@@ -255,12 +270,14 @@ cat << 'EOF' > ./src/app/pages/collab-requests/collab-requests-page.component.ht
         <div *ngFor="let r of requests" class="bg-white p-5 rounded-lg shadow border border-gray-200">
           <div class="flex justify-between">
             <h3 class="font-bold">Vers : {{ r.toUserId | slice:0:5 }}...</h3>
-            <span class="text-xs px-2 py-1 rounded font-bold" [ngClass]="{'bg-yellow-100': r.status==='pending', 'bg-green-100': r.status==='price_proposed'}">{{ r.status === 'pending' ? 'Attente' : 'Offre Reçue' }}</span>
+            <span class="text-xs px-2 py-1 rounded font-bold" [ngClass]="{'bg-yellow-100': r.status==='pending', 'bg-green-100': r.status==='price_proposed'}">
+              {{ getStatusLabel(r.status) }}
+            </span>
           </div>
           <p class="text-sm text-gray-600 mt-2">📦 {{ r.packageDetails.description }}</p>
           
           <div *ngIf="r.status === 'price_proposed'" class="mt-4 bg-green-50 p-3 rounded border border-green-200 animate-pulse">
-            <p class="font-bold text-green-800">Offre : {{ r.response?.price }} TND</p>
+            <p class="font-bold text-green-800">Offre reçue : {{ r.response?.price }} TND</p>
             <p class="text-xs text-green-700 italic">"{{ r.response?.note }}"</p>
             <div class="mt-3 flex gap-2">
               <button (click)="confirmPrice(r)" class="bg-green-600 text-white px-3 py-1.5 rounded text-sm">Valider</button>
@@ -288,37 +305,20 @@ cat << 'EOF' > ./src/app/pages/collab-requests/collab-requests-page.component.ht
     <div *ngIf="activeTab === 'history'" class="space-y-4 animate-fade-in">
       <ng-container *ngIf="historyRequests$ | async as requests">
         <div *ngIf="requests.length === 0" class="text-gray-500 text-center py-10">Historique vide.</div>
-        
         <div *ngFor="let r of requests" class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 opacity-90 hover:opacity-100 transition relative overflow-hidden">
-          
-          <div class="absolute top-0 left-0 w-1 h-full" 
-               [ngClass]="{'bg-green-500': r.status === 'completed', 'bg-red-500': r.status === 'rejected'}"></div>
-
+          <div class="absolute top-0 left-0 w-1 h-full" [ngClass]="{'bg-green-500': r.status === 'completed', 'bg-red-500': r.status === 'rejected'}"></div>
           <div class="flex justify-between items-start pl-3">
             <div>
               <div class="flex items-center gap-2">
-                <h3 class="font-bold text-gray-800">
-                  {{ r.status === 'completed' ? '✅ Mission Terminée' : '🚫 Demande Refusée' }}
-                </h3>
-                <span class="text-xs text-gray-400">
-                  {{ r.createdAt?.seconds * 1000 | date:'dd/MM/yyyy' }}
-                </span>
+                <h3 class="font-bold text-gray-800">{{ getStatusLabel(r.status) }}</h3>
+                <span class="text-xs text-gray-400">{{ r.createdAt?.seconds * 1000 | date:'dd/MM/yyyy' }}</span>
               </div>
-              
               <div class="mt-2 text-sm text-gray-600">
                 <p><strong>Colis :</strong> {{ r.packageDetails.description }}</p>
-                <p><strong>Lieu :</strong> {{ r.packageDetails.clientAddress }}</p>
                 <p *ngIf="r.status === 'completed'"><strong>Prix Final :</strong> {{ r.response?.price }} TND</p>
               </div>
-
-              <div *ngIf="r.status === 'rejected'" class="mt-2 bg-red-50 p-2 rounded text-xs text-red-700 italic border border-red-100">
-                La demande a été rejetée ou annulée.
-              </div>
             </div>
-
-            <button (click)="deleteCollab(r)" class="text-gray-400 hover:text-red-500 text-lg" title="Supprimer de l'historique">
-              🗑️
-            </button>
+            <button (click)="deleteCollab(r)" class="text-gray-400 hover:text-red-500 text-lg" title="Supprimer">🗑️</button>
           </div>
         </div>
       </ng-container>
@@ -354,4 +354,4 @@ cat << 'EOF' > ./src/app/pages/collab-requests/collab-requests-page.component.ht
 </div>
 EOF
 
-echo "✅ Historique détaillé avec notifications de refus installé !"
+echo "✅ Badges de comptage ajoutés sur tous les onglets."

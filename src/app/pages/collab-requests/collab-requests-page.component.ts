@@ -1,10 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { CollaborationService } from '../../services/collaboration.service';
-import { CollaborationRequest, PackageDetails } from '../../interfaces/collaboration-request.interface';
+import { CollaborationRequest } from '../../interfaces/collaboration-request.interface';
 import { AppUser } from '../../interfaces/user.interface';
 import { HeaderComponent } from '../../components/header/header.component';
 import { Observable, switchMap, of, map, combineLatest } from 'rxjs';
@@ -23,22 +23,19 @@ export class CollaborationRequestsPageComponent {
   
   activeTab: 'search' | 'incoming' | 'outgoing' | 'confirmed' | 'history' = 'search';
 
-  // --- DONNEES ---
+  // --- DONNEES BRUTES ---
   allUsers$ = this.collab.getAllUsers();
 
-  // 1. Reçues (À traiter)
   incomingRequests$ = this.currentUser$.pipe(
     switchMap(u => u ? this.collab.getIncomingRequests(u.uid) : of([])),
     map(reqs => reqs.filter(r => r.status === 'pending' || r.status === 'price_proposed'))
   );
 
-  // 2. Envoyées (En attente)
   outgoingRequests$ = this.currentUser$.pipe(
     switchMap(u => u ? this.collab.getOutgoingRequests(u.uid) : of([])),
     map(reqs => reqs.filter(r => r.status === 'pending' || r.status === 'price_proposed'))
   );
 
-  // 3. Actives (Confirmées)
   confirmedRequests$ = this.currentUser$.pipe(
     switchMap(u => {
       if(!u) return of([]);
@@ -51,7 +48,6 @@ export class CollaborationRequestsPageComponent {
     })
   );
 
-  // 4. HISTORIQUE COMPLET (Terminées + Rejetées)
   historyRequests$ = this.currentUser$.pipe(
     switchMap(u => {
       if(!u) return of([]);
@@ -60,33 +56,41 @@ export class CollaborationRequestsPageComponent {
         this.collab.getOutgoingRequests(u.uid)
       ]).pipe(
         map(([inc, out]) => {
-          // On combine tout et on filtre
           const all = [...inc, ...out];
-          // On garde Completed et Rejected
           return all.filter(r => r.status === 'completed' || r.status === 'rejected')
-                    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); // Tri par date récente
+                    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
         })
       );
     })
   );
 
-  // --- COMPTEURS POUR NOTIFICATIONS ---
-  // On crée un observable pour savoir s'il y a des refus récents non lus (simulé ici par la présence dans l'historique)
-  rejectedCount$ = this.historyRequests$.pipe(
-    map(reqs => reqs.filter(r => r.status === 'rejected').length)
-  );
+  // --- COMPTEURS (POUR LES BADGES) ---
+  allUsersCount$ = this.allUsers$.pipe(map(users => users.length));
+  incomingCount$ = this.incomingRequests$.pipe(map(reqs => reqs.length));
+  outgoingCount$ = this.outgoingRequests$.pipe(map(reqs => reqs.length));
+  confirmedCount$ = this.confirmedRequests$.pipe(map(reqs => reqs.length));
+  historyCount$ = this.historyRequests$.pipe(map(reqs => reqs.length));
 
   // --- MODALES ---
   showPriceModal = false;
   showRequestModal = false;
-  
   selectedReq: CollaborationRequest | null = null;
   selectedTargetUser: AppUser | null = null;
-
   priceForm = { price: 0, note: '' };
-  requestForm: PackageDetails = { description: '', clientName: '', clientAddress: '' };
+  requestForm = { description: '', clientName: '', clientAddress: '' };
 
   setActiveTab(tab: any) { this.activeTab = tab; }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'pending': return 'En attente';
+      case 'price_proposed': return 'Prix Proposé';
+      case 'confirmed': return 'Validé / En cours';
+      case 'completed': return 'Terminé';
+      case 'rejected': return 'Refusé';
+      default: return status;
+    }
+  }
 
   // --- ACTIONS ---
 
@@ -143,18 +147,15 @@ export class CollaborationRequestsPageComponent {
   }
 
   async decline(req: CollaborationRequest) {
-    if(req.id && confirm("Refuser cette collaboration ? Elle sera archivée dans l'historique.")) {
+    if(req.id && confirm("Refuser cette collaboration ?")) {
       await this.collab.declineRequest(req.id);
-      this.setActiveTab('history'); // Redirection pour voir le refus archivé
+      this.setActiveTab('history');
     }
   }
 
-  // Méthodes requises par le HTML (aliases)
   accept(req: CollaborationRequest) { this.openPriceModal(req); }
   closeAcceptModal() { this.showPriceModal = false; }
-  confirmAccept() { this.submitPrice(); } // Le HTML appelle confirmAccept pour valider le prix
-  deleteCollab(req: CollaborationRequest) { if(req.id && confirm('Supprimer définitivement ?')) this.collab.deleteCollaboration(req.id); }
-  
-  // Getter pour le formulaire html
+  confirmAccept() { this.submitPrice(); }
+  deleteCollab(req: CollaborationRequest) { if(req.id && confirm('Supprimer ?')) this.collab.deleteCollaboration(req.id); }
   get acceptFormModel() { return this.priceForm; }
 }

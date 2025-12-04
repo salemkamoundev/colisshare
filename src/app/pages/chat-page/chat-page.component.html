@@ -1,53 +1,61 @@
 <div class="h-[calc(100vh-64px)] bg-gray-100 flex overflow-hidden">
   
   <div class="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col" 
-       [class.hidden]="selectedPartner && 'hidden md:flex'"> <div class="p-4 border-b border-gray-200 bg-gray-50">
+       [class.hidden]="selectedPartner && 'hidden md:flex'"> 
+    
+    <div class="p-4 border-b border-gray-200 bg-gray-50">
       <h2 class="text-lg font-bold text-gray-800">Messagerie</h2>
-      <p class="text-xs text-gray-500">Vos collaborateurs actifs</p>
+      <p class="text-xs text-gray-500">Vos discussions actives</p>
     </div>
 
     <div class="flex-1 overflow-y-auto">
-      <ng-container *ngIf="currentUser$ | async as me">
-        <ng-container *ngIf="collaborators$ | async as collaborators">
+      <ng-container *ngIf="collaborators$ | async as collaborators">
           
           <div *ngIf="collaborators.length === 0" class="p-6 text-center text-gray-400 text-sm">
             <p>Aucune collaboration active.</p>
-            <p class="mt-2 text-xs">Acceptez des demandes pour discuter ici.</p>
           </div>
 
           <ul class="divide-y divide-gray-100">
-            <li *ngFor="let partner of collaborators">
-              <button (click)="selectPartner(partner, me.uid)"
-                      class="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-50 transition-colors text-left focus:outline-none focus:bg-blue-50"
-                      [class.bg-blue-100]="selectedPartner?.uid === partner.uid">
+            <li *ngFor="let item of collaborators">
+              <button (click)="selectPartner(item)"
+                      class="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-50 transition-colors text-left focus:outline-none relative"
+                      [class.bg-blue-100]="selectedPartner?.uid === item.details.uid">
                 
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 text-white flex items-center justify-center font-bold shadow-sm">
-                  {{ partner.displayName?.charAt(0)?.toUpperCase() || '?' }}
+                <div class="relative">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 text-white flex items-center justify-center font-bold shadow-sm">
+                    {{ item.details.displayName?.charAt(0)?.toUpperCase() || '?' }}
+                  </div>
+                  <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></span>
                 </div>
 
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-gray-900 truncate">
-                    {{ partner.displayName || 'Utilisateur' }}
+                    {{ item.details.displayName || 'Utilisateur' }}
                   </p>
-                  <p class="text-xs text-gray-500 truncate">
-                    {{ partner.email }}
-                  </p>
+                  <p class="text-xs text-gray-500 truncate">{{ item.details.email }}</p>
                 </div>
 
-                <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <ng-container *ngIf="item.unread$ | async as count">
+                  <div *ngIf="count > 0" class="flex items-center justify-center w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-sm animate-pulse">
+                    {{ count }}
+                  </div>
+                </ng-container>
+
+                <svg *ngIf="(item.unread$ | async) === 0" class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
             </li>
           </ul>
 
-        </ng-container>
       </ng-container>
     </div>
   </div>
 
   <div class="flex-1 flex flex-col bg-gray-50 relative" 
-       [class.hidden]="!selectedPartner && 'hidden md:flex'"> <ng-container *ngIf="currentUser$ | async as me">
+       [class.hidden]="!selectedPartner && 'hidden md:flex'"> 
+    
+    <ng-container *ngIf="currentUser$ | async as me">
       <ng-container *ngIf="selectedPartner; else noSelection">
         
         <div class="bg-white p-3 border-b border-gray-200 flex items-center gap-3 shadow-sm z-10">
@@ -62,9 +70,7 @@
           </div>
           <div>
             <h3 class="font-bold text-gray-800 text-sm">{{ selectedPartner.displayName }}</h3>
-            <span class="text-xs text-green-500 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> En ligne
-            </span>
+            <span class="text-xs text-green-500 flex items-center gap-1">En ligne</span>
           </div>
         </div>
 
@@ -80,8 +86,7 @@
       <ng-template #noSelection>
         <div class="flex-1 flex flex-col items-center justify-center text-gray-400 p-6">
           <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4 text-3xl">💬</div>
-          <p class="text-lg font-medium">Sélectionnez un collaborateur</p>
-          <p class="text-sm">pour commencer à discuter.</p>
+          <p class="text-lg font-medium">Sélectionnez une discussion</p>
         </div>
       </ng-template>
 
