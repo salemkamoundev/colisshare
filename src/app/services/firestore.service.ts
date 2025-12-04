@@ -13,40 +13,38 @@ import {
   Timestamp
 } from '@angular/fire/firestore';
 import { Car } from '../interfaces/car.interface';
-import { Observable, from } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
-// Interface Trip enrichie pour correspondre à vos composants existants
+// Interface Trip mise à jour avec 'destinations'
 export interface Trip {
   id?: string;
-  userId?: string; // Optionnel car parfois c'est companyId/driverId
+  userId?: string;
   companyId?: string;
   driverId?: string;
   
-  // Champs de localisation
-  departure: string; // Utilisé pour l'affichage simple (ville départ)
-  arrival: string;   // Utilisé pour l'affichage simple (ville arrivée)
-  departureCity?: string; // Alias pour compatibilité
-  arrivalCity?: string;   // Alias pour compatibilité
+  // Localisation
+  departure: string;
+  arrival: string;
+  departureCity?: string;
+  arrivalCity?: string;
+  destinations?: string[]; // <--- AJOUTÉ ICI POUR CORRIGER L'ERREUR TS2339
   
-  // Champs de date
-  date: string; // Format string simple pour l'affichage
+  // Dates
+  date: string;
   estimatedDepartureTime?: Timestamp | Date | string;
   estimatedArrivalTime?: Timestamp | Date | string;
   actualDepartureTime?: Timestamp | Date | string;
   actualArrivalTime?: Timestamp | Date | string;
   
-  // Relation Voiture
+  // Relation
   carId: string;
-  car?: Car; 
+  car?: Car;
   
-  // Statut (incluant 'in_progress')
+  // Statut
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   
-  // Etapes du trajet
+  // Etapes & Meta
   steps?: any[];
-  
-  // Métadonnées
   createdAt?: any;
   updatedAt?: any;
 }
@@ -64,7 +62,6 @@ export class FirestoreService {
     return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Car));
   }
 
-  // Alias observable
   getCars(userId: string): Observable<Car[]> {
     const carsRef = collection(this.firestore, 'cars');
     const q = query(carsRef, where('ownerId', '==', userId));
@@ -91,22 +88,16 @@ export class FirestoreService {
   // --- TRAJETS (TRIPS) ---
 
   getTrips(userId: string): Observable<Trip[]> {
-    // On cherche par userId OU companyId (selon votre logique métier)
-    // Pour simplifier ici, on suppose que userId stocke l'ID du propriétaire
     const tripsRef = collection(this.firestore, 'trips');
+    // Recherche par companyId (ou driverId selon votre logique)
     const q = query(tripsRef, where('companyId', '==', userId)); 
-    // Si ça ne marche pas, essayez 'driverId' ou 'userId' selon votre base
     return collectionData(q, { idField: 'id' }) as Observable<Trip[]>;
   }
 
   async addTrip(trip: any): Promise<string> {
-    // 'any' ici permet d'accepter les objets complexes de vos composants
-    // sans se battre avec le typage strict pour l'instant.
-    // On s'assure juste d'avoir les champs minimaux pour l'affichage.
-    
+    // Enrichissement et sécurisation des données avant envoi
     const enrichedTrip = {
       ...trip,
-      // Fallbacks pour garantir la compatibilité
       userId: trip.userId || trip.driverId || trip.companyId,
       departure: trip.departure || trip.departureCity || '',
       arrival: trip.arrival || trip.arrivalCity || '',

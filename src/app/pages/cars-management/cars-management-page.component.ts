@@ -19,6 +19,9 @@ export class CarsManagementPageComponent implements OnInit {
   loading = true;
   showForm = false;
   currentUser: any = null;
+  
+  // ID de la voiture en cours d'édition (null si c'est une création)
+  editingCarId: string | null = null;
 
   // Modèle pour le formulaire
   newCar: Partial<Car> = {
@@ -30,7 +33,6 @@ export class CarsManagementPageComponent implements OnInit {
   };
 
   ngOnInit() {
-    // On récupère l'utilisateur connecté pour charger SES voitures
     this.auth.user$.subscribe(async (user) => {
       this.currentUser = user;
       if (user) {
@@ -51,31 +53,81 @@ export class CarsManagementPageComponent implements OnInit {
     }
   }
 
+  // Ouvre le formulaire pour une NOUVELLE voiture
+  openNewCarForm() {
+    this.resetForm();
+    this.showForm = true;
+  }
+
+  // Ouvre le formulaire pour MODIFIER une voiture existante
+  editCar(car: Car) {
+    this.editingCarId = car.id || null;
+    // On copie les données de la voiture dans le formulaire
+    this.newCar = { ...car };
+    this.showForm = true;
+    
+    // Scroll vers le formulaire pour l'UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   toggleForm() {
-    this.showForm = !this.showForm;
+    if (this.showForm) {
+      this.showForm = false;
+      this.resetForm();
+    } else {
+      this.openNewCarForm();
+    }
+  }
+
+  resetForm() {
+    this.editingCarId = null;
+    this.newCar = { brand: '', model: '', licensePlate: '', capacity: 0, status: 'available' };
   }
 
   async onSubmit() {
     if (!this.currentUser) return;
 
     try {
-      const carToAdd: Car = {
-        ownerId: this.currentUser.uid,
-        brand: this.newCar.brand || '',
-        model: this.newCar.model || '',
-        licensePlate: this.newCar.licensePlate || '',
-        capacity: this.newCar.capacity || 0,
-        status: 'available'
-      };
+      if (this.editingCarId) {
+        // --- MODE MODIFICATION ---
+        const carToUpdate: Car = {
+          id: this.editingCarId,
+          ownerId: this.currentUser.uid, // Sécurité : on garde le owner
+          brand: this.newCar.brand || '',
+          model: this.newCar.model || '',
+          licensePlate: this.newCar.licensePlate || '',
+          capacity: this.newCar.capacity || 0,
+          status: this.newCar.status || 'available',
+          active: true
+        };
+        
+        await this.firestoreService.updateCar(carToUpdate);
+        // alert('✅ Voiture modifiée avec succès !');
 
-      await this.firestoreService.addCar(carToAdd);
-      
-      // Reset du formulaire et rechargement
-      this.newCar = { brand: '', model: '', licensePlate: '', capacity: 0, status: 'available' };
+      } else {
+        // --- MODE CRÉATION ---
+        const carToAdd: Car = {
+          ownerId: this.currentUser.uid,
+          brand: this.newCar.brand || '',
+          model: this.newCar.model || '',
+          licensePlate: this.newCar.licensePlate || '',
+          capacity: this.newCar.capacity || 0,
+          status: 'available',
+          active: true
+        };
+
+        await this.firestoreService.addCar(carToAdd);
+        // alert('✅ Voiture ajoutée avec succès !');
+      }
+
+      // Reset et rechargement
       this.showForm = false;
+      this.resetForm();
       await this.loadCars();
+
     } catch (error) {
-      console.error("Erreur lors de l'ajout:", error);
+      console.error("Erreur lors de l'enregistrement:", error);
+      alert("Erreur lors de l'enregistrement.");
     }
   }
 

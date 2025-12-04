@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import {
@@ -7,12 +7,14 @@ import {
   Validators,
   ReactiveFormsModule,
   FormArray,
+  FormControl
 } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { switchMap, tap } from 'rxjs/operators';
 import { Timestamp } from '@angular/fire/firestore';
 import { FirestoreService } from '../../services/firestore.service';
+import { AuthService } from '../../services/auth.service';
 import { Car } from '../../interfaces/car.interface';
-import { TripStep } from '../../interfaces/trip.interface';
 import { CitySelectComponent } from '../city-select/city-select.component';
 
 @Component({
@@ -22,146 +24,122 @@ import { CitySelectComponent } from '../city-select/city-select.component';
   templateUrl: './trip-entry.component.html',
 })
 export class TripEntryComponent implements OnInit {
-  private readonly COMPANY_ID = 'AbC1dE2fG3hI4jK5lM6n';
-  private readonly DRIVER_ID = 'UIDCurrentDriver';
+  private fb = inject(FormBuilder);
+  private firestoreService = inject(FirestoreService);
+  private router = inject(Router);
+  private auth = inject(AuthService);
 
   tripForm!: FormGroup;
   availableCars$!: Observable<Car[]>;
   loading = false;
-  successMessage = '';
-  errorMessage = '';
-
-  constructor(
-    private fb: FormBuilder,
-    private firestoreService: FirestoreService,
-    private router: Router
-  ) {}
+  currentUserId: string | null = null;
 
   ngOnInit(): void {
+    // 1. Initialisation du formulaire
     this.initForm();
-    this.availableCars$ = this.firestoreService.getCars(this.COMPANY_ID);
+
+    // 2. Chargement des données utilisateur et voitures
+    this.availableCars$ = this.auth.user$.pipe(
+      tap(user => {
+        this.currentUserId = user ? user.uid : null;
+      }),
+      switchMap(user => {
+        if (user) {
+          return this.firestoreService.getCars(user.uid);
+        } else {
+          return of([]);
+        }
+      })
+    );
   }
 
   initForm(): void {
+    // Définition explicite des contrôles pour éviter l'erreur "Cannot find control"
     this.tripForm = this.fb.group({
       carId: ['', Validators.required],
       departureCity: ['', Validators.required],
-      arrivalCity: ['', Validators.required],
+      destinations: this.fb.array([
+        this.createDestinationControl()
+      ]),
+      // CES DEUX CHAMPS DOIVENT CORRESPONDRE AU HTML
       estimatedDepartureTime: ['', Validators.required],
       estimatedArrivalTime: ['', Validators.required],
-      steps: this.fb.array([]),
     });
   }
 
-  get steps(): FormArray {
-    return this.tripForm.get('steps') as FormArray;
+  createDestinationControl(value: string = ''): FormControl {
+    return this.fb.control(value, Validators.required);
   }
 
-  createStepGroup(step?: TripStep): FormGroup {
-    return this.fb.group({
-      city: [step?.city || '', Validators.required],
-      estimatedTime: [step?.estimatedTime || '', Validators.required],
-    });
+  get destinations(): FormArray {
+    return this.tripForm.get('destinations') as FormArray;
   }
 
-  addStep(): void {
-    this.steps.push(this.createStepGroup());
+  addDestination(): void {
+    this.destinations.push(this.createDestinationControl());
   }
 
-  removeStep(index: number): void {
-    this.steps.removeAt(index);
+  removeDestination(index: number): void {
+    if (this.destinations.length > 1) {
+      this.destinations.removeAt(index);
+    } else {
+      alert("Il faut au moins une destination !");
+    }
   }
 
   cancelForm(): void {
-    const hasData =
-      this.tripForm.dirty ||
-      this.tripForm.value.carId ||
-      this.tripForm.value.departureCity;
-
-    if (hasData) {
-      if (
-        confirm(
-          '🚫 Voulez-vous vraiment annuler ? Les modifications seront perdues.'
-        )
-      ) {
-        this.tripForm.reset();
-        this.router.navigate(['/trajets/historique']);
-      }
-    } else {
+    if (confirm('🚫 Annuler la saisie ?')) {
       this.router.navigate(['/trajets/historique']);
     }
   }
 
   async onSubmit(): Promise<void> {
-    // Réinitialiser les messages
-    this.successMessage = '';
-    this.errorMessage = '';
-
-    if (this.tripForm.invalid) {
-      this.errorMessage = '⚠️ Veuillez remplir tous les champs requis.';
-      this.markFormGroupTouched(this.tripForm);
-      
-      // Afficher aussi une alerte
-      alert(this.errorMessage);
+    if (this.tripForm.invalid || !this.currentUserId) {
+      // Astuce: Log pour voir quel champ est invalide
+      console.log('Form invalid:', this.tripForm.value);
+      alert('⚠️ Veuillez remplir tous les champs obligatoires.');
       return;
     }
 
     this.loading = true;
-
     const formValue = this.tripForm.value;
+    
+    // Logique de transformation
+    const rawDestinations = formValue.destinations as string[];
+    const arrivalCity = rawDestinations[rawDestinations.length - 1]; 
+    const steps = rawDestinations.slice(0, -1).map(city => ({
+      city: city,
+      estimatedTime: ''
+    }));
+
     const tripData = {
       carId: formValue.carId,
-      companyId: this.COMPANY_ID,
-      driverId: this.DRIVER_ID,
+      companyId: this.currentUserId,
+      driverId: this.currentUserId,
       departureCity: formValue.departureCity,
-      arrivalCity: formValue.arrivalCity,
-      estimatedDepartureTime: Timestamp.fromDate(
-        new Date(formValue.estimatedDepartureTime)
-      ),
-      estimatedArrivalTime: Timestamp.fromDate(
-        new Date(formValue.estimatedArrivalTime)
-      ),
+      arrivalCity: arrivalCity, 
+      destinations: rawDestinations,
+      steps: steps,
+      
+      // Conversion des dates string -> Timestamp Firestore
+      estimatedDepartureTime: Timestamp.fromDate(new Date(formValue.estimatedDepartureTime)),
+      estimatedArrivalTime: Timestamp.fromDate(new Date(formValue.estimatedArrivalTime)),
+      
       status: 'pending' as const,
-      steps: formValue.steps || [],
+      createdAt: Timestamp.now()
     };
 
     try {
-      const tripId = await this.firestoreService.addTrip(tripData);
-      
-      // Message de succès
-      this.successMessage = `✅ Trajet enregistré avec succès ! (ID: ${tripId})`;
-      console.log('✅ Trajet créé:', tripId, tripData);
-
-      // Afficher une alerte de confirmation
-      alert(`✅ Trajet enregistré avec succès !\n\n📍 ${tripData.departureCity} → ${tripData.arrivalCity}\n🚗 Voiture: ${tripData.carId}\n📅 Départ: ${formValue.estimatedDepartureTime}`);
-
-      // Reset le formulaire
-      this.tripForm.reset();
-
-      // Rediriger après 2 secondes
+      await this.firestoreService.addTrip(tripData);
       setTimeout(() => {
-        this.router.navigate(['/trajets/historique']);
-      }, 2000);
-
+          alert(`✅ Trajet enregistré !`);
+          this.router.navigate(['/trajets/historique']);
+      }, 100);
     } catch (error: any) {
-      console.error('❌ Erreur lors de l\'enregistrement:', error);
-      this.errorMessage = `❌ Erreur: ${error.message || 'Impossible d\'enregistrer le trajet'}`;
-      
-      // Afficher une alerte d'erreur
-      alert(this.errorMessage);
+      console.error('❌ Erreur:', error);
+      alert('❌ Erreur: ' + error.message);
     } finally {
       this.loading = false;
     }
-  }
-
-  private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach((key) => {
-      const control = formGroup.get(key);
-      control?.markAsTouched();
-
-      if (control instanceof FormGroup) {
-        this.markFormGroupTouched(control);
-      }
-    });
   }
 }

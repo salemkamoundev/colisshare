@@ -3,14 +3,12 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16 items-center">
         
-        <!-- Logo -->
         <div class="flex items-center">
           <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer" routerLink="/collaborations/demandes">
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">C</div>
             <span class="hidden md:block text-xl font-bold text-blue-900">ColisShare</span>
           </div>
           
-          <!-- MENU DESKTOP (Écran large) -->
           <nav class="hidden md:ml-8 md:flex md:space-x-6">
             <a routerLink="/collaborations/demandes" 
                routerLinkActive="text-blue-600 border-b-2 border-blue-600" 
@@ -18,16 +16,10 @@
                🤝 Collabs
             </a>
             
-            <a routerLink="/trajets/saisie" 
-               routerLinkActive="text-blue-600 border-b-2 border-blue-600" 
-               class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-               ➕ Trajet+
-            </a>
-
             <a routerLink="/trajets/historique" 
                routerLinkActive="text-blue-600 border-b-2 border-blue-600" 
                class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-               📋 Historique
+               📋 Historique & Trajets
             </a>
 
             <a routerLink="/voitures" 
@@ -38,18 +30,14 @@
           </nav>
         </div>
 
-        <!-- Actions Droite (Profil + Logout + Chat Desktop) -->
         <div class="flex items-center gap-2 md:gap-4">
           
-          <!-- Chat Icon (Visible Desktop) -->
           <a routerLink="/chat" routerLinkActive="text-blue-600 bg-blue-50" class="hidden md:flex p-2 rounded-full text-gray-400 hover:text-blue-600 hover:bg-gray-50 transition-all relative group">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
               <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
             </svg>
-            <span class="hidden group-hover:block absolute top-10 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg">Chat</span>
           </a>
 
-          <!-- User Info -->
           <div class="flex items-center gap-3 pl-2 md:pl-4 md:border-l border-gray-200">
             <div class="hidden lg:flex flex-col items-end">
               <span class="text-sm font-semibold text-gray-900">{{ user.displayName }}</span>
@@ -67,23 +55,15 @@
             </button>
           </div>
         </div>
-
       </div>
       
-      <!-- MENU MOBILE (Barre du bas visible uniquement sur petits écrans) -->
-      <div class="md:hidden py-2 border-t border-gray-100 grid grid-cols-5 gap-1 text-center text-[10px] sm:text-xs font-medium text-gray-500">
+      <div class="md:hidden py-2 border-t border-gray-100 grid grid-cols-4 gap-1 text-center text-[10px] sm:text-xs font-medium text-gray-500">
         
         <a routerLink="/collaborations/demandes" routerLinkActive="text-blue-600 bg-blue-50 rounded-lg" class="flex flex-col items-center p-2 gap-1">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
           Collabs
         </a>
 
-        <a routerLink="/trajets/saisie" routerLinkActive="text-blue-600 bg-blue-50 rounded-lg" class="flex flex-col items-center p-2 gap-1">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          Trajet+
-        </a>
-
-        <!-- Gestion Voitures -->
         <a routerLink="/voitures" routerLinkActive="text-blue-600 bg-blue-50 rounded-lg" class="flex flex-col items-center p-2 gap-1">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
           Autos
